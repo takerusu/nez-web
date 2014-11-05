@@ -1,0 +1,113 @@
+html,body {
+  width: 100%;
+  height: 100%;
+}
+
+.container, .editor-view {
+  height: 100%;
+}
+
+#create-file {
+  background-color: #5cb85c;
+  color: #fff;
+}
+
+#delete-file {
+  background-color: #d9534f;
+  color: #fff;
+}
+
+pre {
+  border: none;
+  font-size: 100%;
+  background-color: #fff;
+}
+
+code {
+  font-size: 100%;
+}
+
+
+#editor {
+  width: 930px;
+  height: 50%;
+  min-height: 300px;
+  overflow: hidden;
+
+}
+
+#peditor {
+  display:none;
+  width: 400px;
+  height: 50%;
+  top: 200px;
+  overflow: hidden;
+}
+
+#poplar-title {
+  display:none;
+  top: 190px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-btn {
+  z-index: 13;
+  position: fixed;
+  top: 60px;
+  left: 1%;
+}
+
+.sidebar-btn-right {
+  z-index: 13;
+  position: fixed;
+  top: 60px;
+  left: 95%;
+}
+
+.sidebar {
+  background-color: #EEE;
+  opacity: 0;
+  width: 280px;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: -300px;
+}
+
+.sidebar-right {
+  overflow-y: auto;
+  padding: 1em;
+  padding-top: 3em;
+
+  text-align: left;
+  z-index: 4;
+  background-color: #FFF;
+  opacity: 0;
+  width: 480px;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 100%;
+  border-left: solid 1px #eee;
+}
+
+.sidebar-right, .sidebar-btn-right {
+  display: none;
+}
+
+.file-edit-view {
+  padding: 1em;
+  border-bottom: solid 1px #AAA;
+  height: 25%;
+  overflow: auto;
+}
+
+.file-view {
+  height: 80%;
+  overflow: auto;
+}
+
+.sidebar, .demo-editor, .sidebar-right, .editor-view,.sidebar-btn, #editor, .btnglyph {
+  transition: all .2s cubic-bezier(.4,0,.2,1);
+}

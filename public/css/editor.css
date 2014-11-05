@@ -1,0 +1,48 @@
+#create-file {
+  background-color: #5cb85c;
+  color: #fff;
+}
+
+#delete-file {
+  background-color: #d9534f;
+  color: #fff;
+}
+
+pre {
+  border: solid 1px #ddd;
+  font-size: 100%;
+  background-color: #fff;
+  height: 0;
+  width: 100%;
+  transition: all .15s cubic-bezier(.4,0,.2,1);
+  opacity: 1;
+}
+
+textarea {
+  transition: all .15s cubic-bezier(.4,0,.2,1);
+  opacity: 1;
+}
+
+code {
+  font-size: 100%;
+}
+
+.error_line {
+  background-color: #f2dede;
+  position: absolute;
+}
+
+.info_line {
+  background-color: #dedeff;
+  position: absolute;
+}
+
+.ground-label {
+  padding: 5px 10px;
+}
+
+.ground-label > .text{
+  cursor: pointer;
+  font-size: 18px;
+
+}

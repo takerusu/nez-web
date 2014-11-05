@@ -1,0 +1,14 @@
+node_modules/
+
+config/development.yaml
+config/production.yaml
+config/local.yaml
+
+npm-debug.log
+*.swp
+*.bak
+
+doc/
+!public/doc/
+
+.DS_Store
