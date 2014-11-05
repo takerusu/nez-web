@@ -1,0 +1,72 @@
+// PEG4d Bash file
+
+File
+	[全体統合: 松村]
+	= { (@Statement)* }
+
+S
+	= 松村
+
+COMMENT
+	= 松村
+
+NL
+	= 松村
+
+Statement
+	= IfStatement
+	/ WhileStatement
+	/ UntilStatement
+	/ ForStatement
+	/ FunctionStatement
+	/ CaseStatement
+	/ DeclareStatement
+	/ LetStatement
+	/ Command
+
+IfStatement	//田村
+	= 'if' 'test'? Expression NL
+		'then' NL
+		Block
+		('elif' Expression NL 'then' NL Block)*
+		('else' Expression NL Block)?
+		'fi' NL
+
+ForStatement
+	= 須藤
+
+FunctionStatement
+	= 山口
+
+CaseStatement
+	= 本多
+
+// それ以外 田村 (全員調整) ただし、Command は関口
+
+WhileStatement
+	= 'while' Expression NL
+	  'do' NL
+	  Block
+	  'done' NL
+
+
+Command
+	[author: tetsurom]
+	= 関口 (パイプ・リダイレクトを含む)
+
+
+Expression
+	= 内田
+
+Literal
+	= 内田
+
+Array
+	= 石井
+
+FilePath
+	[example: /dir/file]
+	[example: "dir name/file"]
+	[example: dir\ name/file]
+	[example: /dir/$file]
+	= 森谷

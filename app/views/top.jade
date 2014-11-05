@@ -9,7 +9,7 @@ block loadFiles
   +js('/js/top.js')
 
 block content
-  .container
+  .container(style="top: -91px; height: 100%")
     .row(id="topbar")
       .title NEZ
       p.title-border.title-border-left
@@ -30,14 +30,14 @@ block content
         | NEZ is hoge hoge...
     .row.row-content(id="documents")
       h2 Documents
-    .row.row-content(id="playground")
+    .row.row-content(id="playground", style="left:0px;")
       .header
         h2(style="display:inline-block") Try NEZ
         button.btn.btn-primary(type="button", id="run", style="margin-left:20px;") Run
       .input-area
         .collapse-block(id="peg4d")
           .ground-label(id="peg4d")
-            span.text(id="peg4d") PEG4d Source&nbsp&nbsp&nbsp&nbsp
+            span.text(id="peg4d") PEG4d Grammar&nbsp&nbsp&nbsp&nbsp
               .dropdown(style="display: inline")
                 button.btn.btn-default.dropdown-toggle(type="button", data-toggle="dropdown", id="dropdownInput")
                   |File&nbsp&nbsp
@@ -49,7 +49,7 @@ block content
                     a(role="menuitem", tabindex="-1", href="#") sample2
                   li(role="presentation")
                     a(role="menuitem", tabindex="-1", href="#") Import
-          pre#pegEditor(name="example")
+          pre#pegEditor(name="example", style="height: 83%")
         .collapse-block(id="input")
           .ground-label(id="input")
             span.text(id="input") Input Source&nbsp&nbsp&nbsp&nbsp
@@ -64,9 +64,9 @@ block content
                     a(role="menuitem", tabindex="-1", href="#") sample2
                   li(role="presentation")
                     a(role="menuitem", tabindex="-1", href="#") Import
-          pre#inputEditor(name="example")
+          pre#inputEditor(name="example", style="height: 83%")
       .output-area
         .collapse-block(id="output")
           .ground-label(id="output")
             span.text(id="output") Output
-          textarea(name="example", style="width: 100%; height: 100%; border: solid 1px #ddd; font-size: 14px; display: block;")
+          textarea(name="output", style="width: 100%; height: 100%; border: solid 1px #ddd; font-size: 14px; display: block;")

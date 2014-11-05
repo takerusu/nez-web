@@ -12,17 +12,13 @@ $(function () {
     pegEditor = ace.edit("pegEditor");
     pegEditor.setTheme("ace/theme/xcode");
     pegEditor.getSession().setMode("ace/mode/c_cpp");
-    pegEditor.setFontSize(14);
+    pegEditor.setFontSize(12);
     inputEditor = ace.edit("inputEditor");
     inputEditor.setTheme("ace/theme/xcode");
     inputEditor.getSession().setMode("ace/mode/markdown");
-    inputEditor.setFontSize(14);
-    $("#" + contentId[0]).css({ left: "0px" });
-    $("#" + navbarId[0] + " > span").attr("class", "navbar-content-active");
-    for (var i = 1; i < contentId.length; i++) {
-        $("#" + contentId[i]).css({ height: "80%" });
-        resizeTextarea();
-    }
+    inputEditor.setFontSize(12);
+    /*$("#" + contentId[2]).css({left: "0px"});
+    $("#" + navbarId[2] + " > span").attr("class", "navbar-content-active");*/
     //
     $(window).resize(function () {
         var width = $(window).width();
@@ -86,6 +82,9 @@ $(function () {
       });*/
     $("#run").click(runCallback);
 });
+$(window).load(function () {
+    resizeTextarea();
+});
 function runNez(source, p4d, callback, onerror) {
     $.ajax({
         type: "POST",
@@ -102,6 +101,7 @@ function runCallback(e) {
     var src = inputEditor.getValue();
     runNez(src, p4d, function (res) {
         console.log(res);
+        $("textarea[name='output']").val(res.source);
     }, function () {
         console.log("sorry");
     });

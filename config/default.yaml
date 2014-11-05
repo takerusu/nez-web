@@ -9,6 +9,6 @@ run:
   port: 3000
   path: '/run'
 nez:
-    path: '/nez/peg4d.jar'
+    path: './nez/peg4d.jar'
     option: ''
     env: ''

@@ -1,0 +1,5 @@
+{
+	"name":"taro",
+	"id":1,
+	"friends":["yamada" ,"kondo"]
+}

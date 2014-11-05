@@ -4,7 +4,7 @@ var express = require('express');
 var router = express.Router();
 var http = require('../helper/post');
 var config = require('config');
-var exec = require('exec-sync');
+var exec = require('child_process').exec;
 var fs = require('fs');
 var tmp = require('tmp');
 var path = require('path');
@@ -17,31 +17,36 @@ function genResponse(res, j) {
 function createFileAndExec(src_tempfile, source, p4d_tempfile, p4d, command, callback) {
     fs.writeFileSync(src_tempfile, source);
     fs.writeFileSync(p4d_tempfile, p4d);
-    var out = exec(command, true);
-    callback(out.stdout, out.stderr);
+    exec(command, function (out) {
+        callback(out);
+    });
 }
 router.post('/run', function (req, res) {
     //dest server is configured by default.yaml
     var client_body = req.body;
     console.log(client_body);
-    tmp.file({ prefix: 'nez', postfix: '.p4d' }, function (err, p4d_tempfile, fd) {
-        tmp.file({ prefix: 'nez', postfix: '.p4d' }, function (err, src_tempfile, fd) {
-            if (err) {
-                console.log(err);
+    tmp.file({ prefix: 'nez', postfix: '.p4d' }, function (p4d_err, p4d_tempfile, fd) {
+        if (p4d_err) {
+            console.log(p4d_err);
+            return;
+        }
+        tmp.file({ prefix: 'nez' }, function (src_err, src_tempfile, fd) {
+            if (src_err) {
+                console.log(src_err);
                 return;
             }
             var dest_file = src_tempfile + '_rev.txt';
-            var exec_command = nez_command + ' -p ' + p4d_tempfile + ' ' + src_tempfile + ' -o ' + dest_file;
+            var exec_command = nez_command + ' -p ' + p4d_tempfile + ' ' + src_tempfile + ' > ' + dest_file;
             console.log(exec_command);
-            createFileAndExec(src_tempfile, req.body.source, p4d_tempfile, req.body.p4d, exec_command, function (stdout, stderr) {
-                var data = fs.readFileSync(src_tempfile + '_rev.txt');
+            createFileAndExec(src_tempfile, req.body.source, p4d_tempfile, req.body.p4d, exec_command, function (stdout) {
+                var data = fs.readFileSync(dest_file);
                 if (data.length > 0) {
-                    var j = { error: stderr, message: stdout, source: data.toString(), runnable: true };
+                    var j = { source: data.toString(), runnable: true };
                     genResponse(res, j);
                 }
                 else {
                     var msg = "エラー訂正候補を出せませんでした";
-                    var error_j = { error: stderr, message: stdout, source: msg, runnable: false };
+                    var error_j = { source: msg, runnable: false };
                     genResponse(res, error_j);
                 }
             });
