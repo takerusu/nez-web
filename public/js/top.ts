@@ -1,7 +1,9 @@
 ///<reference path="../../typings/jquery/jquery.d.ts" />
 ///<reference path="../../typings/ace/ace.d.ts" />
+///<reference path="../../typings/vmjs/vmjs.d.ts" />
 ///<reference path='../../typings/config/config.d.ts'/>
-
+var createNodeViewFromP4DJson;
+var VisModelJS;
 var pegEditor;
 var inputEditor;
 var navbarId = ["navbar-overview", "navbar-documents", "navbar-playground"];
@@ -87,6 +89,13 @@ $(function() {
       });*/
 
       $("#run").click(runCallback);
+
+      $(".visualize-btn").click(visualizeCallback);
+
+      $("span[id='peg4d'] > .dropdown > ul > li > a").click(function(){
+        console.log(this);
+        setP4d($(this).attr("value"), $(this).text());
+        });
 });
 
 $(window).load(function(){
@@ -111,6 +120,42 @@ function runCallback(e: Event){
   runNez(src, p4d, function(res){
     console.log(res);
     $("textarea[name='output']").val(res.source);
+    }, () => {
+      console.log("sorry");
+    });
+}
+
+function visualize(source, p4d, callback, onerror){
+  $.ajax({
+    type: "POST",
+    url: Config.basePath + "/visualize",
+    data: JSON.stringify({source: source, p4d: p4d}),
+    dataType: 'json',
+    contentType: "application/json; charset=utf-8",
+    success: callback,
+    error: onerror
+  });
+}
+
+function visualizeCallback(e: Event){
+  var p4d = pegEditor.getValue();
+  var src = inputEditor.getValue();
+  visualize(src, p4d, function(res){
+    console.log(res);
+    $("#visualOutput").css("display", "");
+    var root = document.getElementById("visualOutput");
+    var panel = new VisModelJS.VisualModelPanel(root);
+
+    var TopNode = createNodeViewFromP4DJson(JSON.parse(res.source));
+
+    panel.InitializeView(TopNode);
+    panel.Draw();
+    panel.Viewport.SetCamera(TopNode.GetCenterGX(), TopNode.GetCenterGY() + panel.Viewport.GetPageHeight() / 3, 1);
+    panel.addEventListener("dblclick", function (event) {
+        var node = event.node;
+        node.SetIsFolded(!node.IsFolded());
+        panel.Draw(panel.TopNodeView.Label, 300, node);
+    });
     }, () => {
       console.log("sorry");
     });
@@ -162,4 +207,20 @@ function inputToggle(toId, target, notTarget, id, notFocusId){
     $(target).css("height", "50%");
     $(target + " > pre").css({"display": "", "opacity": "1","height": textareaHeight + "px"});
   }
+}
+
+function setP4d(fileName, displayName){
+  $.ajax({
+    type: "GET",
+    url: "/p4d/" + fileName + ".p4d",
+    success: function(res){
+      if (pegEditor != null) {
+          pegEditor.setValue(res);
+          pegEditor.clearSelection();
+          pegEditor.gotoLine(0);
+          $("span[id='peg4d'] > .dropdown > button").text(displayName);
+          $("span[id='peg4d'] > .dropdown > button").append("<span class=caret>");
+        }
+      }
+    });
 }

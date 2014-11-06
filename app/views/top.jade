@@ -2,10 +2,19 @@ extends layout
 
 block header
   +css('/css/index.css')
+  +css('/css/app.css')
   include editor_css
 
 block loadFiles
   +js('/vendor/ace/src/ace.js')
+  +js('lib/pointerevents.min.js')
+  +js('src/vismodeljs/Utils.js')
+  +js('src/vismodeljs/Viewport.js')
+  +js('src/vismodeljs/LayoutEngine.js')
+  +js('src/vismodeljs/NodeView.js')
+  +js('src/vismodeljs/VisualModelPanel.js')
+  +js('src/vismodeljs/Shape.js')
+  +js('/vendor/app.js')
   +js('/js/top.js')
 
 block content
@@ -39,34 +48,33 @@ block content
           .ground-label(id="peg4d")
             span.text(id="peg4d") PEG4d Grammar&nbsp&nbsp&nbsp&nbsp
               .dropdown(style="display: inline")
+                span File:&nbsp&nbsp
                 button.btn.btn-default.dropdown-toggle(type="button", data-toggle="dropdown", id="dropdownInput")
-                  |File&nbsp&nbsp
+                  |None&nbsp&nbsp
                   span.caret
                 ul.dropdown-menu(role="menu", aria-labelledby="dropdownInput")
                   li(role="presentation")
-                    a(role="menuitem", tabindex="-1", href="#") sample1
+                    a(role="menuitem", tabindex="-1", value="c99") C
                   li(role="presentation")
-                    a(role="menuitem", tabindex="-1", href="#") sample2
+                    a(role="menuitem", tabindex="-1", value="js4") JavaScript
                   li(role="presentation")
-                    a(role="menuitem", tabindex="-1", href="#") Import
+                    a(role="menuitem", tabindex="-1", value="json") JSON
+                  li(role="presentation")
+                    .importP4d(role="menuitem", tabindex="-1", href="#") Import
+                    input(type="file", id="importP4d", style="display:none")
           pre#pegEditor(name="example", style="height: 83%")
         .collapse-block(id="input")
           .ground-label(id="input")
             span.text(id="input") Input Source&nbsp&nbsp&nbsp&nbsp
               .dropdown(style="display: inline")
                 button.btn.btn-default.dropdown-toggle(type="button", data-toggle="dropdown", id="dropdownInput")
-                  |File&nbsp&nbsp
+                  |Import&nbsp&nbsp
                   span.caret
-                ul.dropdown-menu(role="menu", aria-labelledby="dropdownInput")
-                  li(role="presentation")
-                    a(role="menuitem", tabindex="-1", href="#") sample1
-                  li(role="presentation")
-                    a(role="menuitem", tabindex="-1", href="#") sample2
-                  li(role="presentation")
-                    a(role="menuitem", tabindex="-1", href="#") Import
           pre#inputEditor(name="example", style="height: 83%")
       .output-area
         .collapse-block(id="output")
           .ground-label(id="output")
             span.text(id="output") Output
-          textarea(name="output", style="width: 100%; height: 100%; border: solid 1px #ddd; font-size: 14px; display: block;")
+            span.btn.btn-info.pull-right.visualize-btn Visualize
+          textarea(name="output", style="width: 100%; height: 100%; border: solid 1px #ddd; font-size: 12px; display: block;")
+      include visual

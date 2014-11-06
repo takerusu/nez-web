@@ -23,5 +23,4 @@ marked.setOptions({
 router.get('/', function(req, res) {
   res.render('top', { basePath: config.base.path });
 });
-
 module.exports = router;

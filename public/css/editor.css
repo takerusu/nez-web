@@ -21,6 +21,7 @@ pre {
 textarea {
   transition: all .15s cubic-bezier(.4,0,.2,1);
   opacity: 1;
+  font-size: 12px;
 }
 
 code {
@@ -42,7 +43,9 @@ code {
 }
 
 .ground-label > .text{
-  cursor: pointer;
-  font-size: 18px;
+  font-size: 16px;
+}
 
+.ground-label > .text > .dropdown > button{
+  padding: 4px 12px;
 }
