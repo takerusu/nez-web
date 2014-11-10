@@ -489,7 +489,7 @@ module VisModelJS {
             ////console.log("Visible:Hidden = " + Object.keys(this.OnScreenNodeMap).length + ":" + Object.keys(this.HiddenNodeMap).length);
         }
 
-        private Clear(): void {
+        public Clear(): void {
             this.RootElement.style.display = "none";
             this.ContentLayer.innerHTML = "";
             this.SVGLayer.removeChild(this.SVGLayerConnectorGroup);

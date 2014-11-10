@@ -89,6 +89,8 @@ $(function () {
         console.log(this);
         setP4d($(this).attr("value"), $(this).text());
     });
+    pegEditor.on("change", visualizeCallback);
+    inputEditor.on("change", visualizeCallback);
 });
 $(window).load(function () {
     resizeTextarea();
@@ -131,6 +133,7 @@ function visualizeCallback(e) {
     visualize(src, p4d, function (res) {
         console.log(res);
         $("#visualOutput").css("display", "");
+        $("#visualOutput").empty();
         var root = document.getElementById("visualOutput");
         var panel = new VisModelJS.VisualModelPanel(root);
         var TopNode = createNodeViewFromP4DJson(JSON.parse(res.source));
@@ -151,7 +154,7 @@ function resizeTextarea(toSize) {
         for (var i = 0; i < editorId.length; i++) {
             var target = ".collapse-block[id='" + editorId[i] + "']";
             if (i != 2) {
-                var divHeight = $(".container").outerHeight(true) * toSize / 2;
+                var divHeight = $(".container").outerHeight(true) * toSize * 0.7;
             }
             else {
                 var divHeight = $(".container").outerHeight(true) * toSize;
