@@ -3,10 +3,5 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
 	<classpathentry exported="true" kind="lib" path="ext/jline-1.0.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Tamura/Documents/GitHub/peg4d-java/ext/mongo-java-driver-2.12.4.jar" sourcepath="C:/Users/Tamura/Documents/GitHub/peg4d-java/ext/mongo-java-driver-2.12.4-sources.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:file:/C:/Users/Tamura/Documents/GitHub/peg4d-java/ext/mongo-java-driver-2.12.4-javadoc.jar!/"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

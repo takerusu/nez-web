@@ -139,8 +139,8 @@ function visualizeCallback(e) {
     var p4d = pegEditor.getValue();
     var src = inputEditor.getValue();
     visualize(src, p4d, function (res) {
-        console.log(res, res.source.substring(0, 4));
-        if (res.source.charAt(0) == "{") {
+        console.log(res);
+        if (res.runnable) {
             $("#visualOutput").css("display", "");
             $("#visualOutput").empty();
             var root = document.getElementById("visualOutput");

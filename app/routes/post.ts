@@ -78,8 +78,13 @@ router.post('/visualize', function(req, res) {
       createFileAndExec(src_tempfile, req.body.source, p4d_tempfile, req.body.p4d, exec_command, function(stdout) {
           var data = fs.readFileSync(dest_file);
           if(data.length > 0) {
-              var j = { source: data.toString(), runnable: true };
-              genResponse(res, j);
+              var sendData:any = /(^{$|\n{\n)[\S\s]*/m.exec(data.toString());
+              if(sendData){
+                var j = { source: sendData[0], runnable: true };
+              } else {
+                var j = { source: data.toString(), runnable: false };
+              }
+                genResponse(res, j);
           } else {
               var msg = "エラー訂正候補を出せませんでした";
               var error_j = { source: msg, runnable: false };

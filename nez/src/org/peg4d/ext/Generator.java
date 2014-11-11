@@ -22,7 +22,7 @@ public class Generator {
 	private final static String TAB = " ";
 	private final static String LF = "\n";
 	private final static String CRLF = "\r\n";
-
+	
 	public Generator(String fileName) {
 		if(fileName != null) {
 			try {
@@ -78,7 +78,7 @@ public class Generator {
 			out = null;
 		}
 	}
-
+	
 	public final void writePego(ParsingObject pego) {
 		this.writePego(pego, "");
 		this.write(LF);
@@ -89,7 +89,7 @@ public class Generator {
 		if(pego.size() == 0) {
 			this.write(LF);
 			this.write(indent);
-			this.write("{#" + pego.getTag()+ " ");
+			this.write("{#" + pego.getTag()+ " "); 
 			this.write(ParsingCharset.quoteString('\'', pego.getText(), '\''));
 			this.write("}");
 		}
@@ -106,7 +106,7 @@ public class Generator {
 			this.write("}");
 		}
 	}
-
+	
 	public final void writeCommaSeparateValue(ParsingObject pego, double ratio) {
 		UList<String> names = new UList<String>(new String[8]);
 		UMap<Counter> schema =  new UMap<Counter>();
@@ -132,7 +132,7 @@ public class Generator {
 		}
 		this.close();
 	}
-
+	
 	private void extractSchema(ParsingObject root, ParsingObject pego, String prefix, UList<String> names, UMap<Counter> schema) {
 		for(int i = 0; i < pego.size(); i++) {
 			ParsingObject p = pego.get(i);
@@ -190,7 +190,7 @@ public class Generator {
 		}
 		write(text);
 	}
-
+	
 	private final boolean needsCsvQuote(String text) {
 		if(text.length() > 0) {
 			for(int i = 0; i < text.length(); i++) {
@@ -202,7 +202,7 @@ public class Generator {
 		}
 		return false;
 	}
-
+	
 	private final String quotedCsvString(String text) {
 		StringBuilder sb = new StringBuilder();
 		sb.append('"');
@@ -227,8 +227,8 @@ public class Generator {
 		sb.append('"');
 		return sb.toString();
 	}
-
-
+	
+	
 	public final void writeJSON(ParsingObject pego) {
 		String indent = TAB;
 		write("", "", "{");
@@ -313,6 +313,6 @@ public class Generator {
 			write(lf, "", text);
 		}
 	}
-
-
+	
+	
 }

@@ -37,16 +37,16 @@ public class Main {
 
 	// -c
 	public static boolean RecognitionOnlyMode = false;
-
+	
 	// -W
 	public static int WarningLevel = 1;
 
 	// --find
 	private static int FindFileIndex = -1;
-
+	
 	//
 	private static String InputFileName = null;
-
+	
 	// -o
 	private static String OutputFileName = null;
 
@@ -61,7 +61,7 @@ public class Main {
 
 	// --a
 	public static boolean DiskMode = false;
-
+	
 	// --verbose:stat
 	public static int     StatLevel = -1;
 
@@ -73,7 +73,7 @@ public class Main {
 	public static boolean AllExpressionMemo  = false;
 	public static boolean PackratStyleMemo   = true;
 	public static boolean ObjectFocusedMemo  = false;
-
+	
 	// -O
 	public static int OptimizationLevel = 2;
 	public static int MemoFactor = 256;
@@ -113,7 +113,7 @@ public class Main {
 			performShell(peg);
 		}
 	}
-
+	
 	private static void parseCommandArguments(String[] args) {
 		int index = 0;
 		while (index < args.length) {
@@ -268,7 +268,7 @@ public class Main {
 		}
 		return null;
 	}
-
+	
 	private static GrammarFormatter loadGrammarFormatter(String driverName) {
 		GrammarFormatter d = loadDriverImpl(driverName);
 		if(d == null) {
@@ -288,7 +288,7 @@ public class Main {
 		}
 		return d;
 	}
-
+	
 	private synchronized static void loadInputFile(Grammar peg, String fileName) {
 		String startPoint = StartingPoint;
 		Main.printVerbose("FileName", fileName);
@@ -376,8 +376,8 @@ public class Main {
 			m.put(key, n+1);
 		}
 	}
-
-
+	
+	
 	private final static void displayShellVersion(Grammar peg) {
 		Main._PrintLine(ProgName + "-" + Version + " (" + CodeName + ") on " + Main._GetPlatform());
 		Main._PrintLine(Copyright);
@@ -407,7 +407,7 @@ public class Main {
 		}
 		System.out.println("");
 	}
-
+	
 	private static String switchStaringPoint(Grammar peg, String ruleName, String startPoint) {
 		if(peg.hasRule(ruleName)) {
 			peg.show(ruleName);
@@ -448,7 +448,7 @@ public class Main {
 		}
 		System.out.println("");
 	}
-
+	
 	static void infer(UList<ParsingRule> ruleList, ParsingContext context, UList<String> seq, Grammar peg) {
 		if(!context.hasByteChar()) {
 			printSequence(seq);
@@ -489,7 +489,7 @@ public class Main {
 		}
 		System.out.println(sb.toString());
 	}
-
+	
 	private static jline.ConsoleReader ConsoleReader = null;
 
 	private final static String readMultiLine(String prompt, String prompt2) {
@@ -616,8 +616,8 @@ public class Main {
 		}
 	}
 
-
-
+	
+	
 	public final static void _Exit(int status, String message) {
 		if(Main.VerboseMode) {
 			System.out.println("EXIT " + Main._GetStackInfo(3) + " " + message);
@@ -656,8 +656,8 @@ public class Main {
 		}
 	}
 
-
-
+	
+	
 	public final static boolean _IsFlag(int flag, int flag2) {
 		return ((flag & flag2) == flag2);
 	}
