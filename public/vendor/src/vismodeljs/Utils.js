@@ -176,11 +176,9 @@ var VisModelJS;
         @param {string} StyleName Style name. The name can be used as a parameter for NodeView#Addd/RemoveColorStyle
         @param {Object} StyleDef jQuery.css style definition. ex) { fill: #FFFFFF, stroke: #000000 }
         */
-        function defineColorStyle(StyleName, StyleDef) {
-            $("<style>").html("." + StyleName + " { " + $("span").css(StyleDef).attr("style") + " }").appendTo("head");
-        }
-        Utils.defineColorStyle = defineColorStyle;
-
+        //export function defineColorStyle(StyleName: string, StyleDef: Object): void {
+        //    $("<style>").html("." + StyleName + " { " + $("span").css(StyleDef).attr("style") + " }").appendTo("head");
+        //}
         function generateStyleSetter(originalName) {
             var cameledName = originalName.substring(0, 1).toUpperCase() + originalName.substring(1);
             if (UserAgant.isTrident()) {
@@ -368,9 +366,9 @@ var VisModelJS;
     })(VisModelJS.Direction || (VisModelJS.Direction = {}));
     var Direction = VisModelJS.Direction;
 
-    function ReverseDirection(Dir) {
+    function reverseDirection(Dir) {
         return (Dir + 2) & 3;
     }
-    VisModelJS.ReverseDirection = ReverseDirection;
+    VisModelJS.reverseDirection = reverseDirection;
 })(VisModelJS || (VisModelJS = {}));
 //# sourceMappingURL=Utils.js.map

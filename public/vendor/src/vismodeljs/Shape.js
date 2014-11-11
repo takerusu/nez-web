@@ -217,17 +217,17 @@ var VisModelJS;
                 var div = document.createElement("div");
                 this.Content = div;
 
-                div.id = this.NodeView.Label;
-                div.setAttribute("data-nodelabel", this.NodeView.Label);
+                div.id = this.NodeView.label;
+                div.setAttribute("data-nodelabel", this.NodeView.label);
 
-                if (this.NodeView.Label) {
+                if (this.NodeView.label) {
                     var h4 = document.createElement("h4");
-                    h4.textContent = this.NodeView.Label;
+                    h4.textContent = this.NodeView.label;
                     div.appendChild(h4);
                 }
-                if (this.NodeView.Content) {
+                if (this.NodeView.content) {
                     var p = document.createElement("p");
-                    p.innerText = this.NodeView.Content.trim();
+                    p.innerText = this.NodeView.content.trim();
                     div.appendChild(p);
                 }
                 this.UpdateHtmlClass();
@@ -241,7 +241,7 @@ var VisModelJS;
 
         Shape.prototype.Render = function (HtmlContentFragment, SvgNodeFragment, SvgConnectionFragment) {
             SvgNodeFragment.appendChild(this.ShapeGroup);
-            if (this.ArrowPath != null && this.NodeView.Parent != null) {
+            if (this.ArrowPath != null && this.NodeView.parent != null) {
                 SvgConnectionFragment.appendChild(this.ArrowPath);
             }
             HtmlContentFragment.appendChild(this.Content);
@@ -260,7 +260,7 @@ var VisModelJS;
         };
 
         Shape.prototype.SetPosition = function (x, y) {
-            if (this.NodeView.IsVisible) {
+            if (this.NodeView.visible) {
                 var div = this.Content;
                 if (div != null) {
                     div.style.left = x + "px";
@@ -476,7 +476,7 @@ var VisModelJS;
             }
         };
 
-        Shape.prototype.AddColorStyle = function (ColorStyleCode) {
+        Shape.prototype.addColorStyle = function (ColorStyleCode) {
             if (ColorStyleCode) {
                 if (this.ColorStyles.indexOf(ColorStyleCode) < 0) {
                     this.ColorStyles.push(ColorStyleCode);
@@ -487,7 +487,7 @@ var VisModelJS;
             }
         };
 
-        Shape.prototype.RemoveColorStyle = function (ColorStyleCode) {
+        Shape.prototype.removeColorStyle = function (ColorStyleCode) {
             if (ColorStyleCode && ColorStyleCode != VisModelJS.ColorStyle.Default) {
                 var Index = this.ColorStyles.indexOf(ColorStyleCode);
                 if (Index > 0) {
@@ -499,11 +499,11 @@ var VisModelJS;
             }
         };
 
-        Shape.prototype.GetColorStyle = function () {
+        Shape.prototype.getColorStyle = function () {
             return this.ColorStyles;
         };
 
-        Shape.prototype.SetColorStyle = function (Styles) {
+        Shape.prototype.setColorStyle = function (Styles) {
             this.ColorStyles = Styles;
             if (this.ColorStyles.indexOf(VisModelJS.ColorStyle.Default) < 0) {
                 this.ColorStyles.push(VisModelJS.ColorStyle.Default);

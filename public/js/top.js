@@ -1,4 +1,5 @@
 ///<reference path="../../typings/jquery/jquery.d.ts" />
+///<reference path="../../typings/jquery/jquery_plugins.d.ts" />
 ///<reference path="../../typings/ace/ace.d.ts" />
 ///<reference path="../../typings/vmjs/vmjs.d.ts" />
 ///<reference path='../../typings/config/config.d.ts'/>
@@ -10,6 +11,8 @@ var navbarId = ["navbar-overview", "navbar-documents", "navbar-playground"];
 var contentId = ["overview", "documents", "playground"];
 var editorId = ["peg4d", "input", "output"];
 var inputFocus = "both";
+var setEditorId = [];
+var reader = new FileReader();
 $(function () {
     // 初期化
     pegEditor = ace.edit("pegEditor");
@@ -20,6 +23,9 @@ $(function () {
     inputEditor.setTheme("ace/theme/xcode");
     inputEditor.getSession().setMode("ace/mode/markdown");
     inputEditor.setFontSize(12);
+    var root = document.getElementById("visualOutput");
+    var panel = new VisModelJS.VisualModelPanel(root);
+    var TopNode = createNodeViewFromP4DJson({ "": "" });
     /*$("#" + contentId[2]).css({left: "0px"});
     $("#" + navbarId[2] + " > span").attr("class", "navbar-content-active");*/
     //
@@ -89,6 +95,7 @@ $(function () {
         console.log(this);
         setP4d($(this).attr("value"), $(this).text());
     });
+    setSource();
     pegEditor.on("change", visualizeCallback);
     inputEditor.on("change", visualizeCallback);
 });
@@ -210,6 +217,42 @@ function setP4d(fileName, displayName) {
                 $("span[id='peg4d'] > .dropdown > button").text(displayName);
                 $("span[id='peg4d'] > .dropdown > button").append("<span class=caret>");
             }
+        }
+    });
+}
+function setSource() {
+    var target = $('.fileUploader');
+    target.each(function () {
+        var txt = $(this).find('.txt');
+        var btn = $(this).find('.btn');
+        var uploader = $(this).find('.uploader');
+        uploader.bind('change', function (e) {
+            var targetInput = e.target;
+            var files = targetInput.files;
+            console.log(files);
+            txt.val($(this).val());
+            txt.text(files[0].name);
+            setEditorId.push($(this).attr("id"));
+            reader.readAsText(files[0]);
+        });
+        btn.bind('click', function (event) {
+            event.preventDefault();
+            return false;
+        });
+    });
+    reader.addEventListener("load", function () {
+        console.log(setEditorId);
+        switch (setEditorId.shift()) {
+            case "source":
+                inputEditor.setValue(reader.result);
+                inputEditor.clearSelection();
+                inputEditor.gotoLine(0);
+                break;
+            case "p4d":
+                pegEditor.setValue(reader.result);
+                pegEditor.clearSelection();
+                pegEditor.gotoLine(0);
+                break;
         }
     });
 }

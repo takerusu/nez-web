@@ -54,3 +54,7 @@ interface JQuery {
 interface JQuery {
     tablesorter(): JQuery;
 }
+
+interface EventTarget{
+  files: any;
+}

@@ -7,14 +7,14 @@ var __extends = this.__extends || function (d, b) {
 var VisModelJS;
 (function (VisModelJS) {
     var Pointer = (function () {
-        function Pointer(X, Y, ID) {
-            this.X = X;
-            this.Y = Y;
-            this.ID = ID;
+        function Pointer(x, y, id) {
+            this.x = x;
+            this.y = y;
+            this.id = id;
         }
-        Pointer.prototype.SetPosition = function (X, Y) {
-            this.X = X;
-            this.Y = Y;
+        Pointer.prototype.setPosition = function (x, y) {
+            this.x = x;
+            this.y = y;
         };
         return Pointer;
     })();
@@ -22,105 +22,84 @@ var VisModelJS;
 
     /**
     Controll scroll by mouse, touch and pen and zoom by wheel.
-    @class AssureNote.ScrollManager
-    @for AssureNote.ViewportManager
+    @class VisModelJS.ScrollManager
+    @for VisModelJS.ViewportManager
     */
     var ScrollManager = (function () {
-        function ScrollManager(Viewport) {
-            this.Viewport = Viewport;
-            this.CurrentX = 0;
-            this.CurrentY = 0;
-            this.Dx = 0;
-            this.Dy = 0;
-            this.MainPointerID = null;
-            this.Pointers = [];
+        function ScrollManager() {
+            this.currentX = 0;
+            this.currentY = 0;
+            this.dx = 0;
+            this.dy = 0;
+            this.mainPointerID = null;
+            this.pointers = [];
             this.timer = 0;
             this.ANIMATE_THRESHOLD = 5;
             this.SPEED_MAX = 100;
+            this.onDragged = function (dx, dy) {
+            };
         }
-        ScrollManager.prototype.StartDrag = function (InitialX, InitialY) {
-            this.CurrentX = InitialX;
-            this.CurrentY = InitialY;
-            try  {
-                if (this.OnStartDrag) {
-                    this.OnStartDrag(this.Viewport);
-                }
-            } catch (e) {
-            }
+        ScrollManager.prototype.startDrag = function (initialX, initialY) {
+            this.currentX = initialX;
+            this.currentY = initialY;
         };
 
-        ScrollManager.prototype.UpdateDrag = function (CurrentX, CurrentY) {
-            this.Dx = CurrentX - this.CurrentX;
-            this.Dy = CurrentY - this.CurrentY;
-            var speed = this.Dx * this.Dx + this.Dy + this.Dy;
+        ScrollManager.prototype.updateDrag = function (currentX, currentY) {
+            this.dx = currentX - this.currentX;
+            this.dy = currentY - this.currentY;
+            var speed = this.dx * this.dx + this.dy + this.dy;
             if (speed > this.SPEED_MAX * this.SPEED_MAX) {
-                this.Dx *= ((this.SPEED_MAX * this.SPEED_MAX) / speed);
-                this.Dy *= ((this.SPEED_MAX * this.SPEED_MAX) / speed);
+                this.dx *= ((this.SPEED_MAX * this.SPEED_MAX) / speed);
+                this.dy *= ((this.SPEED_MAX * this.SPEED_MAX) / speed);
             }
 
-            this.CurrentX = CurrentX;
-            this.CurrentY = CurrentY;
-            if (this.OnDragged) {
-                this.OnDragged(this.Viewport);
-            }
+            this.currentX = currentX;
+            this.currentY = currentY;
         };
 
-        ScrollManager.prototype.GetMainPointer = function () {
-            return this.Pointers[this.MainPointerID];
+        ScrollManager.prototype.getMainPointer = function () {
+            return this.pointers[this.mainPointerID];
         };
 
-        ScrollManager.prototype.IsDragging = function () {
-            return this.MainPointerID != null;
+        ScrollManager.prototype.isDragging = function () {
+            return this.mainPointerID != null;
         };
 
-        ScrollManager.prototype.StopAnimation = function () {
+        ScrollManager.prototype.stopAnimation = function () {
             clearInterval(this.timer);
-            this.Dx = 0;
-            this.Dy = 0;
+            this.dx = 0;
+            this.dy = 0;
         };
 
-        ScrollManager.prototype.EndDrag = function () {
-            this.MainPointerID = null;
-            this.Viewport.SetEventMapLayerPosition(false);
-            try  {
-                if (this.OnEndDrag) {
-                    this.OnEndDrag(this.Viewport);
-                }
-            } catch (e) {
-            }
+        ScrollManager.prototype.endDrag = function () {
+            this.mainPointerID = null;
         };
 
-        ScrollManager.prototype.OnPointerEvent = function (e, Screen) {
+        ScrollManager.prototype.onPointerEvent = function (e, viewport) {
             var _this = this;
             switch (e.type) {
-                case "pointerdown":
-                    if (e.pointerType == "mouse" && e.button != 0) {
-                        return;
-                    }
-                    if (!this.Pointers[e.pointerId]) {
-                        this.Pointers[e.pointerId] = new Pointer(e.clientX, e.clientY, e.pointerId);
+                case "trackstart":
+                    if (!this.pointers[e.pointerId]) {
+                        this.pointers[e.pointerId] = new Pointer(e.clientX, e.clientY, e.pointerId);
                         e.preventDefault();
                         e.stopPropagation();
                         //Log(e);
                     }
                     break;
-                case "pointerout":
-                case "pointerleave":
-                case "pointercancel":
-                case "pointerup":
-                    if (!this.Pointers[e.pointerId]) {
+                case "trackend":
+                    if (!this.pointers[e.pointerId]) {
                         return;
                     }
-                    delete this.Pointers[e.pointerId];
+                    delete this.pointers[e.pointerId];
                     e.preventDefault();
                     e.stopPropagation();
 
                     break;
-                case "pointermove":
-                    if (!this.Pointers[e.pointerId]) {
+                case "track":
+                    if (!this.pointers[e.pointerId]) {
                         return;
                     }
-                    this.Pointers[e.pointerId].SetPosition(e.clientX, e.clientY);
+                    this.pointers[e.pointerId].setPosition(e.clientX, e.clientY);
                     e.preventDefault();
                     e.stopPropagation();
                     break;
@@ -128,228 +107,234 @@ var VisModelJS;
                     return;
             }
 
-            var IsTherePointer = Object.keys(this.Pointers).length > 0;
-            var HasDragJustStarted = IsTherePointer && !this.IsDragging();
-            var HasDragJustEnded = !this.GetMainPointer() && this.IsDragging();
+            var isTherePointer = Object.keys(this.pointers).length > 0;
+            var hasDragJustStarted = isTherePointer && !this.isDragging();
+            var hasDragJustEnded = !this.getMainPointer() && this.isDragging();
 
-            if (IsTherePointer) {
-                if (HasDragJustStarted) {
-                    this.StopAnimation();
+            if (isTherePointer) {
+                if (hasDragJustStarted) {
+                    this.stopAnimation();
                     this.timer = null;
-                    var mainPointer = this.Pointers[Object.keys(this.Pointers)[0]];
-                    this.MainPointerID = mainPointer.ID;
-                    this.Viewport.SetEventMapLayerPosition(true);
-                    this.StartDrag(mainPointer.X, mainPointer.Y);
+                    var mainPointer = this.pointers[Object.keys(this.pointers)[0]];
+                    this.mainPointerID = mainPointer.id;
+                    this.startDrag(mainPointer.x, mainPointer.y);
                 } else {
-                    var mainPointer = this.GetMainPointer();
+                    var mainPointer = this.getMainPointer();
                     if (mainPointer) {
-                        this.UpdateDrag(mainPointer.X, mainPointer.Y);
-                        Screen.AddOffset(this.Dx, this.Dy);
+                        this.updateDrag(mainPointer.x, mainPointer.y);
+                        this.onDragged(this.dx, this.dy);
                     } else {
-                        this.EndDrag();
+                        this.endDrag();
                     }
                 }
             } else {
-                if (HasDragJustEnded) {
+                if (hasDragJustEnded) {
                     if (this.timer) {
-                        this.StopAnimation();
+                        this.stopAnimation();
                         this.timer = null;
                     }
                     this.timer = setInterval(function () {
-                        if (Math.abs(_this.Dx) < _this.ANIMATE_THRESHOLD && Math.abs(_this.Dy) < _this.ANIMATE_THRESHOLD) {
-                            _this.StopAnimation();
+                        if (Math.abs(_this.dx) < _this.ANIMATE_THRESHOLD && Math.abs(_this.dy) < _this.ANIMATE_THRESHOLD) {
+                            _this.stopAnimation();
                         }
-                        _this.CurrentX += _this.Dx;
-                        _this.CurrentY += _this.Dy;
-                        _this.Dx *= 0.95;
-                        _this.Dy *= 0.95;
-                        Screen.AddOffset(_this.Dx, _this.Dy);
+                        _this.currentX += _this.dx;
+                        _this.currentY += _this.dy;
+                        _this.dx *= 0.95;
+                        _this.dy *= 0.95;
+                        _this.onDragged(_this.dx, _this.dy);
                     }, 16);
                 }
-                this.EndDrag();
+                this.endDrag();
             }
         };
 
-        ScrollManager.prototype.OnDoubleTap = function (e, Screen) {
-            //var width: number = Screen.ContentLayer.clientWidth;
-            //var height: number = Screen.ContentLayer.clientHeight;
-            //var pointer = this.Pointers[0];
-        };
-
-        ScrollManager.prototype.OnMouseWheel = function (e, Screen) {
-            Screen.SetCameraScale(Screen.GetCameraScale() * (1 + e.deltaY * 0.02));
+        ScrollManager.prototype.onMouseWheel = function (e, screen) {
+            screen.camera.scale *= 1 + e.deltaY * 0.02;
         };
         return ScrollManager;
     })();
     VisModelJS.ScrollManager = ScrollManager;
 
     /**
-    @class AssureNote.ViewportManager
+    @class VisModelJS.ViewportManager
     */
     var ViewportManager = (function (_super) {
         __extends(ViewportManager, _super);
-        function ViewportManager(Panel) {
+        function ViewportManager(panel) {
             var _this = this;
             _super.call(this);
-            this.Panel = Panel;
-            this.ScrollManager = new ScrollManager(this);
-            this.CameraGX = 0;
-            this.CameraGY = 0;
-            this.Scale = 1.0;
-            this.IsPointerEnabled = true;
-            this.CameraMoveTask = new VisModelJS.AnimationFrameTask();
-            this.IsEventMapUpper = false;
+            this.panel = panel;
+            this.scrollManager = new ScrollManager();
+            this.cameraGx = 0;
+            this.cameraGy = 0;
+            this.scale = 1.0;
+            this.isPointerEnabled = true;
+            this.cameraMoveTask = new VisModelJS.AnimationFrameTask();
+
+            var _viewport = this;
+            var __camera = {
+                get gx() {
+                    return _viewport.cameraGx;
+                },
+                set gx(value) {
+                    var camera = this;
+                    camera.setPosition(value, _viewport.cameraGy);
+                },
+                get gy() {
+                    return _viewport.cameraGy;
+                },
+                set gy(value) {
+                    var camera = this;
+                    camera.setPosition(_viewport.cameraGx, value);
+                },
+                get scale() {
+                    return _viewport.scale;
+                },
+                set scale(value) {
+                    var camera = this;
+                    _viewport.scale = value < camera.minScale ? camera.minScale : value > camera.maxScale ? camera.maxScale : value;
+                    _viewport.updateAttr();
+                },
+                setPosition: function (gx, gy) {
+                    this.setOffset(_viewport.cameraCenterPageX - gx * _viewport.scale, _viewport.cameraCenterPageY - gy * _viewport.scale);
+                },
+                setPositionAndScale: function (gx, gy, scale) {
+                    _viewport.scale = scale;
+                    this.setOffset(_viewport.cameraCenterPageX - gx * _viewport.scale, _viewport.cameraCenterPageY - gy * _viewport.scale);
+                },
+                get centerPageX() {
+                    return _viewport.cameraCenterPageX;
+                },
+                set centerPageX(value) {
+                    _viewport.cameraCenterPageX = value;
+                },
+                get centerPageY() {
+                    return _viewport.cameraCenterPageY;
+                },
+                set centerPageY(value) {
+                    _viewport.cameraCenterPageY = value;
+                },
+                setCenterPagePosition: function (pageX, pageY) {
+                    _viewport.cameraCenterPageX = pageX;
+                    _viewport.cameraCenterPageY = pageY;
+                },
+                limitRect: null,
+                /**
+                Move camera position relatively and change scale.
+                @method Move
+                @param {number} GX Scale-independent camera relative X difference.
+                @param {number} GY Scale-independent camera relative Y difference.
+                @param {number} Scale Scale of camera. 1.0 for 100%.
+                @param {number} Duration Time for moving in millisecond.
+                @async
+                */
+                move: function (gx, gy, scale, duration) {
+                    this.moveTo(_viewport.cameraGx + gx, _viewport.cameraGy + gy, scale, duration);
+                },
+                /**
+                Move camera position and scale one time.
+                @method MoveTo
+                @param {number} GX Scale-independent camera X position in GSN. 0 for leftside of topgoal.
+                @param {number} GY Scale-independent camera Y position in GSN. 0 for top of topgoal.
+                @param {number} Scale Scale of camera. 1.0 for 100%.
+                @param {number} Duration Time for moving in millisecond.
+                @async
+                */
+                moveTo: function (gx, gy, scale, duration) {
+                    var Task = _viewport.createMoveToTaskFunction(gx, gy, scale, duration);
+                    if (!Task) {
+                        this.setPositionAndScale(gx, gy, scale);
+                        return;
+                    }
+                    this.cameraMoveTask.start(duration, Task);
+                },
+                // private
+                setOffset: function (pageX, pageY) {
+                    _viewport.cameraGx = (_viewport.cameraCenterPageX - pageX) / _viewport.scale;
+                    _viewport.cameraGy = (_viewport.cameraCenterPageY - pageY) / _viewport.scale;
+                    this.limitPosition();
+                    _viewport.updateAttr();
+                },
+                maxScale: 2.0,
+                minScale: 0.2,
+                limitPosition: function () {
+                    var R = this.limitRect;
+                    if (R) {
+                        if (_viewport.cameraGx < R.x)
+                            _viewport.cameraGx = R.x;
+                        if (_viewport.cameraGy < R.y)
+                            _viewport.cameraGy = R.y;
+                        if (_viewport.cameraGx > R.x + R.width)
+                            _viewport.cameraGx = R.x + R.width;
+                        if (_viewport.cameraGy > R.y + R.height)
+                            _viewport.cameraGy = R.y + R.height;
+                    }
+                },
+                addOffset: function (pageX, pageY) {
+                    _viewport.cameraGx -= pageX / _viewport.scale;
+                    _viewport.cameraGy -= pageY / _viewport.scale;
+                    this.limitPosition();
+                    _viewport.updateAttr();
+                },
+                cameraMoveTask: new VisModelJS.AnimationFrameTask()
+            };
+            this._camera = __camera;
+
+            this.scrollManager.onDragged = __camera.addOffset.bind(__camera);
 
             window.addEventListener("resize", function (e) {
-                _this.UpdatePageRect();
+                _this.updatePageRect();
             });
-            this.UpdatePageSize();
-            this.UpdatePageRect();
-            this.SetCameraPageCenter(this.GetPageCenterX(), this.GetPageCenterY());
-            VisModelJS.Utils.setTransformOriginToElement(this.Panel.ContentLayer, "left top");
-            this.UpdateAttr();
-            var OnPointer = function (e) {
-                if (_this.IsPointerEnabled) {
-                    _this.ScrollManager.OnPointerEvent(e, _this);
+            this.updatePageSize();
+            this.updatePageRect();
+            this._camera.setCenterPagePosition(this.areaCenterX, this.areaCenterY);
+            VisModelJS.Utils.setTransformOriginToElement(this.panel.ContentLayer, "left top");
+            this.updateAttr();
+            var onPointer = function (e) {
+                if (_this.isPointerEnabled) {
+                    _this.scrollManager.onPointerEvent(e, _this);
                 }
             };
-            ["down", "move", "up", "out", "leave", "cancel"].forEach(function (Name) {
-                _this.Panel.RootElement.addEventListener("pointer" + Name, OnPointer, false);
+
+            ["trackstart", "trackend", "track"].forEach(function (name) {
+                PolymerGestures.addEventListener(_this.panel.RootElement, name, onPointer);
             });
+
             var OnWheel = function (e) {
-                if (_this.IsPointerEnabled) {
-                    _this.ScrollManager.OnMouseWheel(e, _this);
+                if (_this.isPointerEnabled) {
+                    e.preventDefault();
+                    _this.scrollManager.onMouseWheel(e, _this);
                 }
             };
-            this.Panel.EventMapLayer.addEventListener('mousewheel', OnWheel);
+            this.panel.RootElement.addEventListener('mousewheel', OnWheel);
         }
-        /**
-        @method GetCameraScale
-        @return {number} Scale of camera. 1.0 for 100%.
-        */
-        ViewportManager.prototype.GetCameraScale = function () {
-            return this.Scale;
+        Object.defineProperty(ViewportManager.prototype, "camera", {
+            get: function () {
+                return this._camera;
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        ViewportManager.prototype.limitScale = function (scale) {
+            return scale < this.camera.minScale ? this.camera.minScale : scale > this.camera.maxScale ? this.camera.maxScale : scale;
         };
 
-        ViewportManager.LimitScale = function (Scale) {
-            return Math.max(0.2, Math.min(20.0, Scale));
-        };
+        Object.defineProperty(ViewportManager.prototype, "offsetPageX", {
+            get: function () {
+                return this.cameraCenterPageX - this.cameraGx * this.scale;
+            },
+            enumerable: true,
+            configurable: true
+        });
 
-        /**
-        @method SetCameraScale
-        @param {number} Scale Scale of camera. 1.0 for 100%.
-        */
-        ViewportManager.prototype.SetCameraScale = function (Scale) {
-            this.Scale = ViewportManager.LimitScale(Scale);
-            this.UpdateAttr();
-        };
-
-        ViewportManager.prototype.GetOffsetPageX = function () {
-            return this.CameraCenterPageX - this.CameraGX * this.Scale;
-        };
-
-        ViewportManager.prototype.GetOffsetPageY = function () {
-            return this.CameraCenterPageY - this.CameraGY * this.Scale;
-        };
-
-        ViewportManager.prototype.LimitCameraPosition = function () {
-            var R = this.CameraLimitRect;
-            if (R) {
-                if (this.CameraGX < R.x)
-                    this.CameraGX = R.x;
-                if (this.CameraGY < R.y)
-                    this.CameraGY = R.y;
-                if (this.CameraGX > R.x + R.width)
-                    this.CameraGX = R.x + R.width;
-                if (this.CameraGY > R.y + R.height)
-                    this.CameraGY = R.y + R.height;
-            }
-        };
-
-        ViewportManager.prototype.SetOffset = function (PageX, PageY) {
-            this.CameraGX = (this.CameraCenterPageX - PageX) / this.Scale;
-            this.CameraGY = (this.CameraCenterPageY - PageY) / this.Scale;
-            this.LimitCameraPosition();
-            this.UpdateAttr();
-        };
-
-        ViewportManager.prototype.AddOffset = function (PageX, PageY) {
-            this.CameraGX -= PageX / this.Scale;
-            this.CameraGY -= PageY / this.Scale;
-            this.LimitCameraPosition();
-            this.UpdateAttr();
-        };
-
-        /**
-        @method GetCameraGX
-        @return {number} Scale-independent camera X position in GSN. 0 for leftside of topgoal.
-        */
-        ViewportManager.prototype.GetCameraGX = function () {
-            return this.CameraGX;
-        };
-
-        /**
-        @method GetCameraGY
-        @return {number} Scale-independent camera Y position in GSN. 0 for top of topgoal.
-        */
-        ViewportManager.prototype.GetCameraGY = function () {
-            return this.CameraGY;
-        };
-
-        /**
-        @method SetCameraPosition
-        @param {number} GX Scale-independent camera X position in GSN. 0 for leftside of topgoal.
-        @param {number} GY Scale-independent camera Y position in GSN. 0 for top of topgoal.
-        */
-        ViewportManager.prototype.SetCameraPosition = function (GX, GY) {
-            this.SetOffset(this.CameraCenterPageX - GX * this.Scale, this.CameraCenterPageY - GY * this.Scale);
-        };
-
-        /**
-        Set camera's position and scale one time.
-        @method SetCamera
-        @param {number} GX Scale-independent camera X position in GSN. 0 for leftside of topgoal.
-        @param {number} GY Scale-independent camera Y position in GSN. 0 for top of topgoal.
-        @param {number} Scale Scale of camera. 1.0 for 100%.
-        */
-        ViewportManager.prototype.SetCamera = function (GX, GY, Scale) {
-            this.Scale = Scale;
-            this.SetOffset(this.CameraCenterPageX - GX * this.Scale, this.CameraCenterPageY - GY * this.Scale);
-        };
-
-        ViewportManager.prototype.MoveCamera = function (GX, GY, Scale) {
-            this.Scale += Scale;
-            this.CameraGX += GX;
-            this.CameraGY += GY;
-            this.UpdateAttr();
-        };
-
-        /**
-        @method GetCameraPageCenterX
-        @return {number} X of camera's vanishing point in web page.
-        */
-        ViewportManager.prototype.GetCameraPageCenterX = function () {
-            return this.CameraCenterPageX;
-        };
-
-        /**
-        @method GetCameraPageCenterY
-        @return {number} Y of camera's vanishing point in web page.
-        */
-        ViewportManager.prototype.GetCameraPageCenterY = function () {
-            return this.CameraCenterPageY;
-        };
-
-        /**
-        Set camera's vanishing point in web page.
-        @method SetCameraPageCenter
-        @param {number} PageX X of camera's vanishing point in web page.
-        @param {number} PageY Y of camera's vanishing point in web page.
-        */
-        ViewportManager.prototype.SetCameraPageCenter = function (PageX, PageY) {
-            this.CameraCenterPageX = PageX;
-            this.CameraCenterPageY = PageY;
-        };
+        Object.defineProperty(ViewportManager.prototype, "offsetPageY", {
+            get: function () {
+                return this.cameraCenterPageY - this.cameraGy * this.scale;
+            },
+            enumerable: true,
+            configurable: true
+        });
 
         /**
         Calcurate PageX from GX
@@ -357,8 +342,8 @@ var VisModelJS;
         @param {number} GX Scale-independent X position in GSN.
         @return {number} PageX for given GX. It is depend on camera's position, scale and vanishing point.
         */
-        ViewportManager.prototype.PageXFromGX = function (GX) {
-            return this.CameraCenterPageX + (GX - this.CameraGX) * this.Scale;
+        ViewportManager.prototype.pageXFromGX = function (gx) {
+            return this.cameraCenterPageX + (gx - this.cameraGx) * this.scale;
         };
 
         /**
@@ -367,8 +352,8 @@ var VisModelJS;
         @param {number} GY Scale-independent Y position in GSN.
         @return {number} PageY for given GY. It is depend on camera's position, scale and vanishing point.
         */
-        ViewportManager.prototype.PageYFromGY = function (GY) {
-            return this.CameraCenterPageY + (GY - this.CameraGY) * this.Scale;
+        ViewportManager.prototype.pageYFromGY = function (gy) {
+            return this.cameraCenterPageY + (gy - this.cameraGy) * this.scale;
         };
 
         /**
@@ -377,8 +362,8 @@ var VisModelJS;
         @param {number} PageX X position in web page.
         @return {number} GX for given PageX. It is depend on camera's position, scale and vanishing point.
         */
-        ViewportManager.prototype.GXFromPageX = function (PageX) {
-            return (PageX - this.CameraCenterPageX) / this.Scale + this.CameraGX;
+        ViewportManager.prototype.gxFromPageX = function (pageX) {
+            return (pageX - this.cameraCenterPageX) / this.scale + this.cameraGx;
         };
 
         /**
@@ -387,153 +372,137 @@ var VisModelJS;
         @param {number} PageY Y position in web page.
         @return {number} GY for given PageY. It is depend on camera's position, scale and vanishing point.
         */
-        ViewportManager.prototype.GYFromPageY = function (PageY) {
-            return (PageY - this.CameraCenterPageY) / this.Scale + this.CameraGY;
+        ViewportManager.prototype.gyFromPageY = function (pageY) {
+            return (pageY - this.cameraCenterPageY) / this.scale + this.cameraGy;
         };
 
-        ViewportManager.prototype.ConvertRectGlobalXYFromPageXY = function (PageRect) {
-            var x1 = this.GXFromPageX(PageRect.x);
-            var y1 = this.GYFromPageY(PageRect.y);
-            var x2 = this.GXFromPageX(PageRect.x + PageRect.width);
-            var y2 = this.GYFromPageY(PageRect.y + PageRect.height);
+        ViewportManager.prototype.convertRectGlobalXYFromPageXY = function (pageRect) {
+            var x1 = this.gxFromPageX(pageRect.x);
+            var y1 = this.gyFromPageY(pageRect.y);
+            var x2 = this.gxFromPageX(pageRect.x + pageRect.width);
+            var y2 = this.gyFromPageY(pageRect.y + pageRect.height);
             return new VisModelJS.Rect(x1, y1, x2 - x1, y2 - y1);
         };
 
-        ViewportManager.prototype.GetPageRectInGxGy = function () {
-            var x1 = this.GXFromPageX(0);
-            var y1 = this.GYFromPageY(0);
-            var x2 = this.GXFromPageX(this.PageWidth);
-            var y2 = this.GYFromPageY(this.PageHeight);
-            return new VisModelJS.Rect(x1, y1, x2 - x1, y2 - y1);
+        Object.defineProperty(ViewportManager.prototype, "pageRectInGxGy", {
+            get: function () {
+                var x1 = this.gxFromPageX(0);
+                var y1 = this.gyFromPageY(0);
+                var x2 = this.gxFromPageX(this._areaWidth);
+                var y2 = this.gyFromPageY(this._areaHeight);
+                return new VisModelJS.Rect(x1, y1, x2 - x1, y2 - y1);
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        Object.defineProperty(ViewportManager.prototype, "areaWidth", {
+            get: function () {
+                return this._areaWidth;
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        Object.defineProperty(ViewportManager.prototype, "areaHeight", {
+            get: function () {
+                return this._areaHeight;
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        Object.defineProperty(ViewportManager.prototype, "areaCenterX", {
+            get: function () {
+                return this._areaWidth * 0.5;
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        Object.defineProperty(ViewportManager.prototype, "areaCenterY", {
+            get: function () {
+                return this._areaHeight * 0.5;
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        ViewportManager.prototype.moveCamera = function (gx, gy, scale) {
+            this.scale += scale;
+            this.cameraGx += gx;
+            this.cameraGy += gy;
+            this.updateAttr();
         };
 
-        ViewportManager.prototype.GetPageWidth = function () {
-            return this.PageWidth;
+        ViewportManager.prototype.createMoveTaskFunction = function (gx, gy, scale, duration) {
+            return this.createMoveToTaskFunction(this.cameraGx + gx, this.cameraGy + gy, scale, duration);
         };
 
-        ViewportManager.prototype.GetPageHeight = function () {
-            return this.PageHeight;
-        };
-
-        ViewportManager.prototype.GetPageCenterX = function () {
-            return this.GetPageWidth() * 0.5;
-        };
-
-        ViewportManager.prototype.GetPageCenterY = function () {
-            return this.GetPageHeight() * 0.5;
-        };
-
-        /**
-        Move camera position relatively and change scale.
-        @method Move
-        @param {number} GX Scale-independent camera relative X difference.
-        @param {number} GY Scale-independent camera relative Y difference.
-        @param {number} Scale Scale of camera. 1.0 for 100%.
-        @param {number} Duration Time for moving in millisecond.
-        @async
-        */
-        ViewportManager.prototype.Move = function (GX, GY, Scale, Duration) {
-            this.MoveTo(this.GetCameraGX() + GX, this.GetCameraGY() + GY, Scale, Duration);
-        };
-
-        /**
-        Move camera position and scale one time.
-        @method MoveTo
-        @param {number} GX Scale-independent camera X position in GSN. 0 for leftside of topgoal.
-        @param {number} GY Scale-independent camera Y position in GSN. 0 for top of topgoal.
-        @param {number} Scale Scale of camera. 1.0 for 100%.
-        @param {number} Duration Time for moving in millisecond.
-        @async
-        */
-        ViewportManager.prototype.MoveTo = function (GX, GY, Scale, Duration) {
-            var Task = this.CreateMoveToTaskFunction(GX, GY, Scale, Duration);
-            if (!Task) {
-                this.SetCamera(GX, GY, Scale);
-                return;
-            }
-            this.CameraMoveTask.start(Duration, Task);
-        };
-
-        ViewportManager.prototype.CreateMoveTaskFunction = function (GX, GY, Scale, Duration) {
-            return this.CreateMoveToTaskFunction(this.GetCameraGX() + GX, this.GetCameraGY() + GY, Scale, Duration);
-        };
-
-        ViewportManager.prototype.CreateMoveToTaskFunction = function (GX, GY, Scale, Duration) {
+        ViewportManager.prototype.createMoveToTaskFunction = function (gx, gy, scale, duration) {
             var _this = this;
-            Scale = ViewportManager.LimitScale(Scale);
-            if (Duration <= 0) {
+            scale = this.limitScale(scale);
+            if (duration <= 0) {
                 return null;
             }
 
-            var VX = (GX - this.GetCameraGX()) / Duration;
-            var VY = (GY - this.GetCameraGY()) / Duration;
+            var VX = (gx - this.cameraGx) / duration;
+            var VY = (gy - this.cameraGy) / duration;
 
-            var S0 = this.GetCameraScale();
-            var ScaleRate = Scale / S0;
-            var DInv = 1 / Duration;
+            var S0 = this.scale;
+            var ScaleRate = scale / S0;
+            var DInv = 1 / duration;
             var ScaleFunction = function (t) {
                 return S0 * Math.pow(ScaleRate, t * DInv);
             };
 
-            if (VY == 0 && VX == 0 && (Scale == S0)) {
+            if (VY == 0 && VX == 0 && (scale == S0)) {
                 return null;
             }
 
             return (function (deltaT, currentTime, startTime) {
                 var DeltaS = ScaleFunction(currentTime - startTime) - ScaleFunction(currentTime - deltaT - startTime);
-                _this.MoveCamera(VX * deltaT, VY * deltaT, DeltaS);
+                _this.moveCamera(VX * deltaT, VY * deltaT, DeltaS);
             });
         };
 
-        ViewportManager.prototype.UpdatePageSize = function () {
-            var rootRect = this.Panel.RootElement.getBoundingClientRect();
-            this.PageWidth = rootRect.width;
-            this.PageHeight = rootRect.height;
+        ViewportManager.prototype.updatePageSize = function () {
+            var rootRect = this.panel.RootElement.getBoundingClientRect();
+            this._areaWidth = rootRect.width;
+            this._areaHeight = rootRect.height;
         };
 
-        ViewportManager.prototype.UpdatePageRect = function () {
-            var CameraCenterXRate = this.CameraCenterPageX / this.PageWidth;
-            var CameraCenterYRate = this.CameraCenterPageY / this.PageHeight;
-            var CameraPX = this.PageXFromGX(this.CameraGX);
-            var CameraPY = this.PageYFromGY(this.CameraGY);
-            this.UpdatePageSize();
-            this.SetCameraPageCenter(this.PageWidth * CameraCenterXRate, this.PageHeight * CameraCenterYRate);
-            this.UpdateAttr();
+        ViewportManager.prototype.updatePageRect = function () {
+            var cameraCenterXRate = this.cameraCenterPageX / this._areaWidth;
+            var cameraCenterYRate = this.cameraCenterPageY / this._areaHeight;
+            var cameraPX = this.pageXFromGX(this.cameraGx);
+            var cameraPY = this.pageYFromGY(this.cameraGy);
+            this.updatePageSize();
+            this.camera.setCenterPagePosition(this._areaWidth * cameraCenterXRate, this._areaHeight * cameraCenterYRate);
+            this.updateAttr();
         };
 
-        ViewportManager.prototype.SetEventMapLayerPosition = function (IsUpper) {
-            //if (IsUpper && !this.IsEventMapUpper) {
-            //    $(this.ControlLayer).after(this.EventMapLayer);
-            //} else if (!IsUpper && this.IsEventMapUpper) {
-            //    $(this.ContentLayer).before(this.EventMapLayer);
-            //}
-            //this.IsEventMapUpper = IsUpper;
-        };
-
-        ViewportManager.CreateTranformAttr = function (x, y, scale) {
+        ViewportManager.createTranformAttr = function (x, y, scale) {
             return "translate(" + x + " " + y + ") scale(" + scale + ")";
         };
 
-        ViewportManager.CreateTransformStyle = function (x, y, scale) {
+        ViewportManager.createTransformStyle = function (x, y, scale) {
             return "translate(" + x + "px, " + y + "px) scale(" + scale + ") ";
         };
 
-        ViewportManager.prototype.UpdateAttr = function () {
-            var OffsetPageX = this.GetOffsetPageX();
-            var OffsetPageY = this.GetOffsetPageY();
-            if (!isNaN(OffsetPageX) && !isNaN(OffsetPageY)) {
-                var attr = ViewportManager.CreateTranformAttr(OffsetPageX, OffsetPageY, this.Scale);
-                var style = ViewportManager.CreateTransformStyle(OffsetPageX, OffsetPageY, this.Scale);
-                this.Panel.SVGLayer.setAttribute("transform", attr);
-                VisModelJS.Utils.setTransformToElement(this.Panel.ContentLayer, style);
+        ViewportManager.prototype.updateAttr = function () {
+            var offsetX = this.offsetPageX;
+            var offsetY = this.offsetPageY;
+            if (!isNaN(offsetX) && !isNaN(offsetY)) {
+                var attr = ViewportManager.createTranformAttr(offsetX, offsetY, this.scale);
+                var style = ViewportManager.createTransformStyle(offsetX, offsetY, this.scale);
+                this.panel.SVGLayer.setAttribute("transform", attr);
+                VisModelJS.Utils.setTransformToElement(this.panel.ContentLayer, style);
             }
-            if (this.OnScroll) {
-                this.OnScroll(this);
-            }
-            var Event = new VisModelJS.VisModelEvent();
-            Event.type = "cameramove";
-            Event.target = this;
-            this.dispatchEvent(Event);
+            var event = new VisModelJS.VisModelEvent();
+            event.type = "cameramove";
+            event.target = this;
+            this.dispatchEvent(event);
         };
         return ViewportManager;
     })(VisModelJS.EventTarget);

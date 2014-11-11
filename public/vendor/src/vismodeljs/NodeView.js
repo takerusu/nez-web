@@ -1,264 +1,270 @@
 var VisModelJS;
 (function (VisModelJS) {
-    var NodeView = (function () {
-        function NodeView() {
-            this.RelativeX = 0;
-            this.RelativeY = 0;
-            this.Left = null;
-            this.Right = null;
-            this.Children = null;
-            this.Shape = null;
-            this.ShouldReLayoutFlag = true;
-            this.IsVisible = true;
-            this.FoldedFlag = false;
+    var TreeNodeView = (function () {
+        function TreeNodeView() {
+            this.relativeX = 0;
+            this.relativeY = 0;
+            this.leftNodes = null;
+            this.rightNodes = null;
+            this.childNodes = null;
+            this._shape = null;
+            this._shouldReLayout = true;
+            this.visible = true;
+            this._folded = false;
         }
-        /*
-        constructor(public Model: GSNNode, IsRecursive: boolean) {
-        this.Label = Model.GetLabel();
-        this.NodeDoc = Model.NodeDoc;
-        this.IsVisible = true;
-        this.IsFoldedFlag = false;
-        this.Status   = EditStatus.TreeEditable;
-        if (IsRecursive && Model.SubNodeList != null) {
-        for (var i = 0; i < Model.SubNodeList.length; i++) {
-        var SubNode = Model.SubNodeList[i];
-        var SubView = new NodeView(SubNode, IsRecursive);
-        if (SubNode.NodeType == GSNType.Assumption || SubNode.NodeType == GSNType.Exception) {
-        // Layout Engine allowed to move a node left-side
-        this.AppendLeftNode(SubView);
-        }else if (SubNode.NodeType == GSNType.Context || SubNode.NodeType == GSNType.Justification) {
-        // Layout Engine allowed to move a node left-side
-        this.AppendRightNode(SubView);
-        } else {
-        this.AppendChild(SubView);
-        }
-        }
-        }
-        }
-        */
-        NodeView.prototype.IsFolded = function () {
-            return this.FoldedFlag;
-        };
+        Object.defineProperty(TreeNodeView.prototype, "folded", {
+            get: function () {
+                return this._folded;
+            },
+            set: function (value) {
+                if (this._folded != value) {
+                    this.shouldReLayout = true;
+                }
+                this._folded = value;
+            },
+            enumerable: true,
+            configurable: true
+        });
 
-        NodeView.prototype.SetIsFolded = function (Flag) {
-            if (this.FoldedFlag != Flag) {
-                this.SetShouldReLayout(true);
-            }
-            this.FoldedFlag = Flag;
-        };
+        Object.defineProperty(TreeNodeView.prototype, "shouldReLayout", {
+            get: function () {
+                return this._shouldReLayout;
+            },
+            set: function (value) {
+                if (!this._shouldReLayout && value && this.parent) {
+                    this.parent.shouldReLayout = true;
+                }
+                this._shouldReLayout = value;
+            },
+            enumerable: true,
+            configurable: true
+        });
 
-        NodeView.prototype.SetShouldReLayout = function (Flag) {
-            if (!this.ShouldReLayoutFlag && Flag && this.Parent) {
-                this.Parent.SetShouldReLayout(true);
-            }
-            this.ShouldReLayoutFlag = Flag;
-        };
-
-        NodeView.prototype.ShouldReLayout = function () {
-            return this.ShouldReLayoutFlag;
-        };
-
-        NodeView.prototype.UpdateViewMap = function (ViewMap) {
-            ViewMap[this.Label] = this;
-            if (this.Left != null) {
-                for (var i = 0; i < this.Left.length; i++) {
-                    this.Left[i].UpdateViewMap(ViewMap);
+        //FixMe
+        TreeNodeView.prototype.UpdateViewMap = function (viewMap) {
+            viewMap[this.label] = this;
+            if (this.leftNodes != null) {
+                for (var i = 0; i < this.leftNodes.length; i++) {
+                    this.leftNodes[i].UpdateViewMap(viewMap);
                 }
             }
-            if (this.Right != null) {
-                for (var i = 0; i < this.Right.length; i++) {
-                    this.Right[i].UpdateViewMap(ViewMap);
+            if (this.rightNodes != null) {
+                for (var i = 0; i < this.rightNodes.length; i++) {
+                    this.rightNodes[i].UpdateViewMap(viewMap);
                 }
             }
-            if (this.Children != null) {
-                for (var i = 0; i < this.Children.length; i++) {
-                    this.Children[i].UpdateViewMap(ViewMap);
+            if (this.childNodes != null) {
+                for (var i = 0; i < this.childNodes.length; i++) {
+                    this.childNodes[i].UpdateViewMap(viewMap);
                 }
             }
         };
 
-        NodeView.prototype.AppendChild = function (SubNode) {
-            if (this.Children == null) {
-                this.Children = [];
+        TreeNodeView.prototype.appendChild = function (node) {
+            if (this.childNodes == null) {
+                this.childNodes = [];
             }
-            this.Children.push(SubNode);
-            SubNode.Parent = this;
+            this.childNodes.push(node);
+            node.parent = this;
         };
 
-        NodeView.prototype.AppendLeftNode = function (SubNode) {
-            if (this.Left == null) {
-                this.Left = [];
+        TreeNodeView.prototype.appendLeftNode = function (node) {
+            if (this.leftNodes == null) {
+                this.leftNodes = [];
             }
-            this.Left.push(SubNode);
-            SubNode.Parent = this;
+            this.leftNodes.push(node);
+            node.parent = this;
         };
 
-        NodeView.prototype.AppendRightNode = function (SubNode) {
-            if (this.Right == null) {
-                this.Right = [];
+        TreeNodeView.prototype.appendRightNode = function (node) {
+            if (this.rightNodes == null) {
+                this.rightNodes = [];
             }
-            this.Right.push(SubNode);
-            SubNode.Parent = this;
+            this.rightNodes.push(node);
+            node.parent = this;
         };
 
-        NodeView.prototype.GetShape = function () {
-            if (this.Shape == null) {
-                this.Shape = VisModelJS.ShapeFactory.CreateShape(this);
-            }
-            return this.Shape;
-        };
+        Object.defineProperty(TreeNodeView.prototype, "shape", {
+            get: function () {
+                if (this._shape == null) {
+                    this._shape = VisModelJS.ShapeFactory.CreateShape(this);
+                }
+                return this._shape;
+            },
+            set: function (value) {
+                if (this._shape) {
+                    this._shape.NodeView = null;
+                }
+                if (value) {
+                    value.NodeView = this;
+                }
+                this._shape = value;
+            },
+            enumerable: true,
+            configurable: true
+        });
 
-        NodeView.prototype.SetShape = function (Shape) {
-            if (this.Shape) {
-                this.Shape.NodeView = null;
-            }
-            if (Shape) {
-                Shape.NodeView = this;
-            }
-            this.Shape = Shape;
-        };
 
-        /**
-        Global X: Scale-independent and transform-independent X distance from leftside of the top goal.
-        @return always 0 if this is top goal.
-        */
-        NodeView.prototype.GetGX = function () {
-            if (NodeView.GlobalPositionCache != null && NodeView.GlobalPositionCache[this.Label]) {
-                return NodeView.GlobalPositionCache[this.Label].x;
-            }
-            if (this.Parent == null) {
-                return this.RelativeX;
-            }
-            return this.Parent.GetGX() + this.RelativeX;
-        };
+        Object.defineProperty(TreeNodeView.prototype, "gx", {
+            /**
+            Global X: Scale-independent and transform-independent X distance from leftside of the top goal.
+            @return always 0 if this is top goal.
+            */
+            get: function () {
+                if (TreeNodeView.globalPositionCache != null && TreeNodeView.globalPositionCache[this.label]) {
+                    return TreeNodeView.globalPositionCache[this.label].x;
+                }
+                if (this.parent == null) {
+                    return this.relativeX;
+                }
+                return this.parent.gx + this.relativeX;
+            },
+            enumerable: true,
+            configurable: true
+        });
 
-        /**
-        Global Y: Scale-independent and transform-independent Y distance from top of the top goal.
-        @eturn always 0 if this is top goal.
-        */
-        NodeView.prototype.GetGY = function () {
-            if (NodeView.GlobalPositionCache != null && NodeView.GlobalPositionCache[this.Label]) {
-                return NodeView.GlobalPositionCache[this.Label].y;
-            }
-            if (this.Parent == null) {
-                return this.RelativeY;
-            }
-            return this.Parent.GetGY() + this.RelativeY;
-        };
+        Object.defineProperty(TreeNodeView.prototype, "gy", {
+            /**
+            Global Y: Scale-independent and transform-independent Y distance from top of the top goal.
+            @eturn always 0 if this is top goal.
+            */
+            get: function () {
+                if (TreeNodeView.globalPositionCache != null && TreeNodeView.globalPositionCache[this.label]) {
+                    return TreeNodeView.globalPositionCache[this.label].y;
+                }
+                if (this.parent == null) {
+                    return this.relativeY;
+                }
+                return this.parent.gy + this.relativeY;
+            },
+            enumerable: true,
+            configurable: true
+        });
 
-        // Global center X/Y: Node center position
-        NodeView.prototype.GetCenterGX = function () {
-            return this.GetGX() + this.Shape.GetNodeWidth() * 0.5;
-        };
+        Object.defineProperty(TreeNodeView.prototype, "centerGx", {
+            // Global center X/Y: Node center position
+            get: function () {
+                return this.gx + this._shape.GetNodeWidth() * 0.5;
+            },
+            enumerable: true,
+            configurable: true
+        });
 
-        NodeView.prototype.GetCenterGY = function () {
-            return this.GetGY() + this.Shape.GetNodeHeight() * 0.5;
-        };
+        Object.defineProperty(TreeNodeView.prototype, "centerGy", {
+            get: function () {
+                return this.gy + this._shape.GetNodeHeight() * 0.5;
+            },
+            enumerable: true,
+            configurable: true
+        });
 
-        NodeView.SetGlobalPositionCacheEnabled = function (State) {
-            if (State && NodeView.GlobalPositionCache == null) {
-                NodeView.GlobalPositionCache = {};
+        TreeNodeView.setGlobalPositionCacheEnabled = function (State) {
+            if (State && TreeNodeView.globalPositionCache == null) {
+                TreeNodeView.globalPositionCache = {};
             } else if (!State) {
-                NodeView.GlobalPositionCache = null;
+                TreeNodeView.globalPositionCache = null;
             }
         };
 
-        /**
-        Scale-independent and transform-independent distance from leftside of GSN.
-        @return always (0, 0) if this is top goal.
-        */
-        NodeView.prototype.GetGlobalPosition = function () {
-            if (NodeView.GlobalPositionCache != null && NodeView.GlobalPositionCache[this.Label]) {
-                return NodeView.GlobalPositionCache[this.Label].clone();
-            }
-            if (this.Parent == null) {
-                return new VisModelJS.Point(this.RelativeX, this.RelativeY);
-            }
-            var ParentPosition = this.Parent.GetGlobalPosition();
-            ParentPosition.x += this.RelativeX;
-            ParentPosition.y += this.RelativeY;
-            if (NodeView.GlobalPositionCache != null) {
-                NodeView.GlobalPositionCache[this.Label] = ParentPosition.clone();
-            }
-            return ParentPosition;
-        };
+        Object.defineProperty(TreeNodeView.prototype, "globalPosition", {
+            /**
+            Scale-independent and transform-independent distance from leftside of GSN.
+            @return always (0, 0) if this is top goal.
+            */
+            get: function () {
+                if (TreeNodeView.globalPositionCache != null && TreeNodeView.globalPositionCache[this.label]) {
+                    return TreeNodeView.globalPositionCache[this.label].clone();
+                }
+                if (this.parent == null) {
+                    return new VisModelJS.Point(this.relativeX, this.relativeY);
+                }
+                var parentPos = this.parent.globalPosition;
+                parentPos.x += this.relativeX;
+                parentPos.y += this.relativeY;
+                if (TreeNodeView.globalPositionCache != null) {
+                    TreeNodeView.globalPositionCache[this.label] = parentPos.clone();
+                }
+                return parentPos;
+            },
+            enumerable: true,
+            configurable: true
+        });
 
         /**
         Append content elements of this node to layer fragments.
         */
-        NodeView.prototype.Render = function (DivFrag, SvgNodeFrag, SvgConnectionFrag) {
-            this.Shape.Render(DivFrag, SvgNodeFrag, SvgConnectionFrag);
+        TreeNodeView.prototype.render = function (htmlLayerFlagment, svgLayerFlagment, svgConnectorFlagment) {
+            this._shape.Render(htmlLayerFlagment, svgLayerFlagment, svgConnectorFlagment);
         };
 
         /**
         Try to reuse shape.
         */
-        NodeView.prototype.SaveFlags = function (OldView) {
-            if (OldView) {
-                this.FoldedFlag = OldView.FoldedFlag;
+        TreeNodeView.prototype.copyFlagsFromOldView = function (oldView) {
+            if (oldView) {
+                this._folded = oldView._folded;
 
-                var IsContentChanged = this.Content != OldView.Content;
-                var IsTypeChanged = false;
+                var isContentChanged = this.content != oldView.content;
 
-                if (IsContentChanged || IsTypeChanged) {
-                    this.GetShape().SetColorStyle(OldView.GetShape().GetColorStyle());
+                if (isContentChanged) {
+                    this.shape.setColorStyle(oldView.shape.getColorStyle());
                 } else {
-                    this.SetShape(OldView.GetShape());
+                    this.shape = oldView.shape;
                 }
             }
         };
 
-        NodeView.prototype.GetConnectorPosition = function (Dir, GlobalPosition) {
-            var P = this.Shape.GetConnectorPosition(Dir);
-            P.x += GlobalPosition.x;
-            P.y += GlobalPosition.y;
+        TreeNodeView.prototype.getConnectorPosition = function (dir, globalPosition) {
+            var P = this._shape.GetConnectorPosition(dir);
+            P.x += globalPosition.x;
+            P.y += globalPosition.y;
             return P;
         };
 
         /**
         Update DOM node position by the position that layout engine caluculated
         */
-        NodeView.prototype.UpdateNodePosition = function (AnimationCallbacks, Duration, ScreenRect, UnfoldBaseNode) {
+        TreeNodeView.prototype.updateNodePosition = function (animationCallbacks, duration, screenRect, unfoldBaseNode) {
             var _this = this;
-            Duration = Duration || 0;
-            if (!this.IsVisible) {
+            duration = duration || 0;
+            if (!this.visible) {
                 return;
             }
-            var UpdateSubNode = function (SubNode) {
-                var Base = UnfoldBaseNode;
-                if (!Base && SubNode.Shape.WillFadein()) {
-                    Base = _this;
+            var updateSubNode = function (SubNode) {
+                var base = unfoldBaseNode;
+                if (!base && SubNode._shape.WillFadein()) {
+                    base = _this;
                 }
-                if (Base && Duration > 0) {
-                    SubNode.Shape.SetFadeinBasePosition(Base.Shape.GetGXCache(), Base.Shape.GetGYCache());
-                    SubNode.UpdateNodePosition(AnimationCallbacks, Duration, ScreenRect, Base);
+                if (base && duration > 0) {
+                    SubNode._shape.SetFadeinBasePosition(base._shape.GetGXCache(), base._shape.GetGYCache());
+                    SubNode.updateNodePosition(animationCallbacks, duration, screenRect, base);
                 } else {
-                    SubNode.UpdateNodePosition(AnimationCallbacks, Duration, ScreenRect);
+                    SubNode.updateNodePosition(animationCallbacks, duration, screenRect);
                 }
             };
 
-            var GlobalPosition = this.GetGlobalPosition();
-            this.Shape.MoveTo(AnimationCallbacks, GlobalPosition.x, GlobalPosition.y, Duration, ScreenRect);
+            var gp = this.globalPosition;
+            this._shape.MoveTo(animationCallbacks, gp.x, gp.y, duration, screenRect);
 
-            var ArrowDirections = [3 /* Bottom */, 2 /* Right */, 0 /* Left */];
-            var SubNodeTypes = [this.Children, this.Right, this.Left];
+            var directions = [3 /* Bottom */, 2 /* Right */, 0 /* Left */];
+            var subNodeTypes = [this.childNodes, this.rightNodes, this.leftNodes];
             for (var i = 0; i < 3; ++i) {
-                var P1 = this.GetConnectorPosition(ArrowDirections[i], GlobalPosition);
-                var ArrowToDirection = VisModelJS.ReverseDirection(ArrowDirections[i]);
-                this.ForEachVisibleSubNode(SubNodeTypes[i], function (SubNode) {
-                    var P2 = SubNode.GetConnectorPosition(ArrowToDirection, SubNode.GetGlobalPosition());
-                    UpdateSubNode(SubNode);
-                    SubNode.Shape.MoveArrowTo(AnimationCallbacks, P1, P2, ArrowDirections[i], Duration, ScreenRect);
-                    SubNode.ParentDirection = VisModelJS.ReverseDirection(ArrowDirections[i]);
+                var p1 = this.getConnectorPosition(directions[i], gp);
+                var arrowGoalDirection = VisModelJS.reverseDirection(directions[i]);
+                this.forEachVisibleSubNode(subNodeTypes[i], function (SubNode) {
+                    var p2 = SubNode.getConnectorPosition(arrowGoalDirection, SubNode.globalPosition);
+                    updateSubNode(SubNode);
+                    SubNode._shape.MoveArrowTo(animationCallbacks, p1, p2, directions[i], duration, screenRect);
+                    SubNode.parentDirection = VisModelJS.reverseDirection(directions[i]);
                 });
             }
         };
 
-        NodeView.prototype.ForEachVisibleSubNode = function (SubNodes, Action) {
-            if (SubNodes != null && !this.FoldedFlag) {
-                for (var i = 0; i < SubNodes.length; i++) {
-                    if (SubNodes[i].IsVisible) {
-                        if (Action(SubNodes[i]) === false) {
+        TreeNodeView.prototype.forEachVisibleSubNode = function (subNodes, action) {
+            if (subNodes != null && !this._folded) {
+                for (var i = 0; i < subNodes.length; i++) {
+                    if (subNodes[i].visible) {
+                        if (action(subNodes[i]) === false) {
                             return false;
                         }
                     }
@@ -267,35 +273,35 @@ var VisModelJS;
             return true;
         };
 
-        NodeView.prototype.ForEachVisibleChildren = function (Action) {
-            this.ForEachVisibleSubNode(this.Children, Action);
+        TreeNodeView.prototype.forEachVisibleChildren = function (action) {
+            this.forEachVisibleSubNode(this.childNodes, action);
         };
 
-        NodeView.prototype.ForEachVisibleRightNodes = function (Action) {
-            this.ForEachVisibleSubNode(this.Right, Action);
+        TreeNodeView.prototype.forEachVisibleRightNodes = function (action) {
+            this.forEachVisibleSubNode(this.rightNodes, action);
         };
 
-        NodeView.prototype.ForEachVisibleLeftNodes = function (Action) {
-            this.ForEachVisibleSubNode(this.Left, Action);
+        TreeNodeView.prototype.forEachVisibleLeftNodes = function (action) {
+            this.forEachVisibleSubNode(this.leftNodes, action);
         };
 
-        NodeView.prototype.ForEachVisibleAllSubNodes = function (Action) {
-            if (this.ForEachVisibleSubNode(this.Left, Action) && this.ForEachVisibleSubNode(this.Right, Action) && this.ForEachVisibleSubNode(this.Children, Action))
+        TreeNodeView.prototype.forEachVisibleAllSubNodes = function (action) {
+            if (this.forEachVisibleSubNode(this.leftNodes, action) && this.forEachVisibleSubNode(this.rightNodes, action) && this.forEachVisibleSubNode(this.childNodes, action))
                 return true;
             return false;
         };
 
-        NodeView.prototype.TraverseVisibleNode = function (Action) {
-            Action(this);
-            this.ForEachVisibleAllSubNodes(function (SubNode) {
-                SubNode.TraverseVisibleNode(Action);
+        TreeNodeView.prototype.traverseVisibleNode = function (action) {
+            action(this);
+            this.forEachVisibleAllSubNodes(function (subNode) {
+                subNode.traverseVisibleNode(action);
             });
         };
 
-        NodeView.prototype.ForEachSubNode = function (SubNodes, Action) {
-            if (SubNodes != null) {
-                for (var i = 0; i < SubNodes.length; i++) {
-                    if (Action(SubNodes[i]) === false) {
+        TreeNodeView.prototype.forEachSubNode = function (subNodes, action) {
+            if (subNodes != null) {
+                for (var i = 0; i < subNodes.length; i++) {
+                    if (action(subNodes[i]) === false) {
                         return false;
                     }
                 }
@@ -303,17 +309,17 @@ var VisModelJS;
             return true;
         };
 
-        NodeView.prototype.ForEachAllSubNodes = function (Action) {
-            if (this.ForEachSubNode(this.Left, Action) && this.ForEachSubNode(this.Right, Action) && this.ForEachSubNode(this.Children, Action))
+        TreeNodeView.prototype.forEachAllSubNodes = function (action) {
+            if (this.forEachSubNode(this.leftNodes, action) && this.forEachSubNode(this.rightNodes, action) && this.forEachSubNode(this.childNodes, action))
                 return true;
             return false;
         };
 
-        NodeView.prototype.TraverseNode = function (Action) {
-            if (Action(this) === false)
+        TreeNodeView.prototype.traverseNode = function (action) {
+            if (action(this) === false)
                 return false;
-            if (this.ForEachAllSubNodes(function (SubNode) {
-                return SubNode.TraverseNode(Action);
+            if (this.forEachAllSubNodes(function (subNode) {
+                return subNode.traverseNode(action);
             }))
                 return true;
             return false;
@@ -323,78 +329,78 @@ var VisModelJS;
         Clear position cache and enable to fading in when the node re-appearing.
         This method should be called after the node became invibible or the node never fade in.
         */
-        NodeView.prototype.ClearAnimationCache = function (Force) {
-            if (Force || !this.IsVisible) {
-                this.GetShape().ClearAnimationCache();
+        TreeNodeView.prototype.clearAnimationCache = function (force) {
+            if (force || !this.visible) {
+                this.shape.ClearAnimationCache();
             }
-            if (Force || this.FoldedFlag) {
-                this.ForEachAllSubNodes(function (SubNode) {
-                    SubNode.ClearAnimationCache(true);
+            if (force || this._folded) {
+                this.forEachAllSubNodes(function (SubNode) {
+                    SubNode.clearAnimationCache(true);
                 });
             } else {
-                this.ForEachAllSubNodes(function (SubNode) {
-                    SubNode.ClearAnimationCache(false);
+                this.forEachAllSubNodes(function (SubNode) {
+                    SubNode.clearAnimationCache(false);
                 });
             }
         };
 
-        NodeView.prototype.HasSideNode = function () {
-            return (this.Left != null && this.Left.length > 0) || (this.Right != null && this.Right.length > 0);
-        };
+        Object.defineProperty(TreeNodeView.prototype, "hasSideNode", {
+            get: function () {
+                return (this.leftNodes != null && this.leftNodes.length > 0) || (this.rightNodes != null && this.rightNodes.length > 0);
+            },
+            enumerable: true,
+            configurable: true
+        });
 
-        NodeView.prototype.HasChildren = function () {
-            return (this.Children != null && this.Children.length > 0);
-        };
+        Object.defineProperty(TreeNodeView.prototype, "hasChildren", {
+            get: function () {
+                return (this.childNodes != null && this.childNodes.length > 0);
+            },
+            enumerable: true,
+            configurable: true
+        });
 
-        NodeView.prototype.AddColorStyle = function (ColorStyle) {
-            this.Shape.AddColorStyle(ColorStyle);
-        };
-
-        NodeView.prototype.RemoveColorStyle = function (ColorStyle) {
-            this.Shape.RemoveColorStyle(ColorStyle);
-        };
-
-        NodeView.prototype.IsInRect = function (Target) {
+        TreeNodeView.prototype.isInRect = function (target) {
             // While animation playing, cached position(visible position) != this.position(logical position)
-            var GXC = this.Shape.GetGXCache();
-            var GYC = this.Shape.GetGYCache();
-            var Pos;
-            if (GXC != null && GYC != null) {
-                Pos = new VisModelJS.Point(GXC, GYC);
+            var gxCached = this._shape.GetGXCache();
+            var gyCached = this._shape.GetGYCache();
+            var pos;
+            if (gxCached != null && gyCached != null) {
+                pos = new VisModelJS.Point(gxCached, gyCached);
             } else {
-                Pos = this.GetGlobalPosition();
+                pos = this.globalPosition;
             }
-            if (Pos.x > Target.x + Target.width || Pos.y > Target.y + Target.height) {
+            if (pos.x > target.x + target.width || pos.y > target.y + target.height) {
                 return false;
             }
-            Pos.x += this.Shape.GetNodeWidth();
-            Pos.y += this.Shape.GetNodeHeight();
-            if (Pos.x < Target.x || Pos.y < Target.y) {
+            pos.x += this._shape.GetNodeWidth();
+            pos.y += this._shape.GetNodeHeight();
+            if (pos.x < target.x || pos.y < target.y) {
                 return false;
             }
             return true;
         };
 
-        NodeView.prototype.IsConnectorInRect = function (Target) {
-            if (!this.Parent) {
+        TreeNodeView.prototype.isConnectorInRect = function (target) {
+            if (!this.parent) {
                 return false;
             }
-            var PA;
-            var PB;
-            if (this.Shape.GetGXCache() != null && this.Shape.GetGYCache() != null) {
-                PA = this.Shape.GetArrowP1Cache();
-                PB = this.Shape.GetArrowP2Cache();
+            var pa;
+            var pb;
+            if (this._shape.GetGXCache() != null && this._shape.GetGYCache() != null) {
+                pa = this._shape.GetArrowP1Cache();
+                pb = this._shape.GetArrowP2Cache();
             } else {
-                PA = this.GetConnectorPosition(this.ParentDirection, this.GetGlobalPosition());
-                PB = this.Parent.GetConnectorPosition(VisModelJS.ReverseDirection(this.ParentDirection), this.Parent.GetGlobalPosition());
+                pa = this.getConnectorPosition(this.parentDirection, this.globalPosition);
+                pb = this.parent.getConnectorPosition(VisModelJS.reverseDirection(this.parentDirection), this.parent.globalPosition);
             }
-            var Pos = new VisModelJS.Point(Math.min(PA.x, PB.x), Math.min(PA.y, PB.y));
-            if (Pos.x > Target.x + Target.width || Pos.y > Target.y + Target.height) {
+            var pos = new VisModelJS.Point(Math.min(pa.x, pb.x), Math.min(pa.y, pb.y));
+            if (pos.x > target.x + target.width || pos.y > target.y + target.height) {
                 return false;
             }
-            Pos.x = Math.max(PA.x, PB.x);
-            Pos.y = Math.max(PA.y, PB.y);
-            if (Pos.x < Target.x || Pos.y < Target.y) {
+            pos.x = Math.max(pa.x, pb.x);
+            pos.y = Math.max(pa.y, pb.y);
+            if (pos.x < target.x || pos.y < target.y) {
                 return false;
             }
             return true;
@@ -404,18 +410,18 @@ var VisModelJS;
         @method FoldDeepSubGoals
         @param {NodeView} NodeView
         */
-        NodeView.prototype.FoldDeepSubGoals = function (limitDepth) {
+        TreeNodeView.prototype.foldDeepSubGoals = function (limitDepth) {
             if (limitDepth <= 0) {
-                this.SetIsFolded(true);
+                this.folded = true;
             } else {
-                this.ForEachVisibleChildren(function (SubNode) {
-                    return SubNode.FoldDeepSubGoals(limitDepth - 1);
+                this.forEachVisibleChildren(function (SubNode) {
+                    return SubNode.foldDeepSubGoals(limitDepth - 1);
                 });
             }
         };
-        NodeView.GlobalPositionCache = null;
-        return NodeView;
+        TreeNodeView.globalPositionCache = null;
+        return TreeNodeView;
     })();
-    VisModelJS.NodeView = NodeView;
+    VisModelJS.TreeNodeView = TreeNodeView;
 })(VisModelJS || (VisModelJS = {}));
 //# sourceMappingURL=NodeView.js.map

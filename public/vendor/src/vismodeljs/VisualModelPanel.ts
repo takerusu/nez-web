@@ -2,7 +2,7 @@
 module VisModelJS {
 
     export class NodeViewEvent extends VisModelEvent {
-        node: NodeView;
+        node: TreeNodeView;
     }
 
     /**
@@ -20,12 +20,13 @@ module VisModelJS {
         ControlLayer: HTMLDivElement;
         HiddenNodeBuffer: DocumentFragment;
         Viewport: ViewportManager;
-        ViewMap: { [index: string]: NodeView };
-        TopNodeView: NodeView;
+        ViewMap: { [index: string]: TreeNodeView };
+        TopNodeView: TreeNodeView;
         ActiveFlag: boolean;
+        FocusedFlag: boolean;
 
-        OnScreenNodeMap: { [index: string]: NodeView } = {};
-        HiddenNodeMap: { [index: string]: NodeView } = {};
+        OnScreenNodeMap: { [index: string]: TreeNodeView } = {};
+        HiddenNodeMap: { [index: string]: TreeNodeView } = {};
 
         private FocusedLabel: string;// A label pointed out or clicked.
         // We do not use FocusedView but FocusedLabel to make it modular.
@@ -61,6 +62,7 @@ module VisModelJS {
             this.makeItLayer(this.SVGLayerBox, "100%", "100%");
 
             this.SVGLayer = Utils.createSVGElement("g");
+            this.SVGLayer.className.baseVal = "vismodel-svglayer";
             this.SVGLayerConnectorGroup = Utils.createSVGElement("g");
             this.SVGLayerNodeGroup = Utils.createSVGElement("g");
 
@@ -76,6 +78,8 @@ module VisModelJS {
             // Create HTML Layer
             this.EventMapLayer = document.createElement("div");
             this.ContentLayer = document.createElement("div");
+            this.EventMapLayer.className = "vismodel-eventmaplayer";
+            this.ContentLayer.className = "vismodel-contentlayer";
 
             this.makeItLayer(this.EventMapLayer, "100%", "100%");
             this.makeItLayer(this.ContentLayer, "0px", "0px");
@@ -89,31 +93,35 @@ module VisModelJS {
             this.HiddenNodeBuffer = document.createDocumentFragment();
 
             this.Viewport = new ViewportManager(this);
-            this.LayoutEngine = new SimpleLayoutEngine();
+            this.LayoutEngine = new VerticalTreeLayoutEngine();
 
             this.Viewport.addEventListener("cameramove", () => {
                 this.UpdateHiddenNodeList();
             });
+
+
+            var clickEventIsHandledInViewport = false;
+            var focused = false;
+            document.addEventListener("click", (event: MouseEvent) => {
+                clickEventIsHandledInViewport = false;
+                setTimeout(() => {
+                    if (focused && !clickEventIsHandledInViewport) {
+                        focused = false;
+                    } else if(!focused && clickEventIsHandledInViewport){
+                        focused = true;
+                    }
+                }, 0);
+            }, true);
 
             this.RootElement.addEventListener("click", (event: MouseEvent) => {
                 var Label: string = Utils.getNodeLabelFromEvent(event);
                 if (this.IsActive()) {
                     this.ChangeFocusedLabel(Label);
                 }
+                clickEventIsHandledInViewport = true;
                 event.preventDefault();
                 event.stopPropagation();
             });
-
-            //this.ContentLayer.addEventListener("contextmenu", (event: MouseEvent) => {
-            //    var Label: string = Utils.GetNodeLabelFromEvent(event);
-            //    var NodeView = this.ViewMap[Label];
-            //    if (NodeView != null) {
-            //        this.ChangeFocusedLabel(Label);
-            //    } else {
-            //        this.FocusedLabel = null;
-            //    }
-            //    event.preventDefault();
-            //});
 
             this.ContentLayer.addEventListener("dblclick", (event: MouseEvent) => {
                 var Label: string = Utils.getNodeLabelFromEvent(event);
@@ -129,18 +137,10 @@ module VisModelJS {
                 }
             });
 
-            //this.ContentLayer.addEventListener("mouseover", (event: MouseEvent) => {
-            
-            //});
-
-            //this.ContentLayer.addEventListener("mouseleave", (event: MouseEvent) => {
-            //    /* We use mouseleave event instead of mouseout since mouseout/mouseenter fires
-            //       every time the pointer enters the sub-element of ContentLayer.
-            //       Mouseleave can prevent this annoying event firing. */
-            //});
-
             document.addEventListener("keydown", (Event: KeyboardEvent) => {
-                this.OnKeyDown(Event);
+                if (focused) {
+                    this.OnKeyDown(Event);
+                }
             }, true);
 
             var DragHandler = (e) => {
@@ -194,13 +194,13 @@ module VisModelJS {
                     break;
                 case 187: /*+*/
                     if (Event.shiftKey) {
-                        this.Viewport.SetCameraScale(this.Viewport.GetCameraScale() + 0.1)
+                        this.Viewport.camera.scale += 0.1;
                     }
                     Event.preventDefault();
                     break;
                 case 189: /*-*/
                     if (Event.shiftKey) {
-                        this.Viewport.SetCameraScale(this.Viewport.GetCameraScale() - 0.1)
+                        this.Viewport.camera.scale -= 0.1;
                     }
                     Event.preventDefault();
                     break;
@@ -208,17 +208,17 @@ module VisModelJS {
                     handled = false;
                     break;
             }
-            if (handled) {
-                Event.stopPropagation();
-            }
+            //if (handled) {
+            //    Event.stopPropagation();
+            //}
         }
 
         OnActivate(): void {
-            this.Viewport.IsPointerEnabled = true;
+            this.Viewport.isPointerEnabled = true;
         }
 
         OnDeactivate(): void {
-            this.Viewport.IsPointerEnabled = false;
+            this.Viewport.isPointerEnabled = false;
         }
 
         /**
@@ -236,14 +236,14 @@ module VisModelJS {
         /**
             @method FocusAndMoveToNode
         */
-        FocusAndMoveToNode(Node: NodeView): void;
+        FocusAndMoveToNode(Node: TreeNodeView): void;
         FocusAndMoveToNode(Label: string): void;
         FocusAndMoveToNode(Node: any): void {
             if (Node != null) {
-                var NextNode: NodeView = Node.constructor == String ? this.ViewMap[Node] : Node;
+                var NextNode: TreeNodeView = Node.constructor == String ? this.ViewMap[Node] : Node;
                 if (NextNode != null) {
-                    this.ChangeFocusedLabel(NextNode.Label);
-                    this.Viewport.MoveTo(NextNode.GetCenterGX(), NextNode.GetCenterGY(), this.Viewport.GetCameraScale(), 50);
+                    this.ChangeFocusedLabel(NextNode.label);
+                    this.Viewport.camera.moveTo(NextNode.centerGx, NextNode.centerGy, this.Viewport.camera.scale, 50);
                 }
             }
         }
@@ -254,7 +254,7 @@ module VisModelJS {
             @param {AssureNote.Direction} Dir 
             @return {AssureNote.NodeView} Found node. If no node is found, null is retured.
         */
-        FindNearestNode(CenterNode: NodeView, Dir: Direction): NodeView {
+        FindNearestNode(CenterNode: TreeNodeView, Dir: Direction): TreeNodeView {
             var RightLimitVectorX: number = 1;
             var RightLimitVectorY: number = 1;
             var LeftLimitVectorX: number = 1;
@@ -278,13 +278,13 @@ module VisModelJS {
                     RightLimitVectorX = -1;
                     break;
             }
-            var NearestNode: NodeView = null;
+            var NearestNode: TreeNodeView = null;
             var CurrentMinimumDistanceSquere = Infinity;
-            var CX = CenterNode ? CenterNode.GetCenterGX() : this.Viewport.GetCameraGX();
-            var CY = CenterNode ? CenterNode.GetCenterGY() : this.Viewport.GetCameraGY();
-            this.TopNodeView.TraverseVisibleNode((Node: NodeView) => {
-                var DX = Node.GetCenterGX() - CX;
-                var DY = Node.GetCenterGY() - CY;
+            var CX = CenterNode ? CenterNode.centerGx : this.Viewport.camera.gx;
+            var CY = CenterNode ? CenterNode.centerGy : this.Viewport.camera.gy;
+            this.TopNodeView.traverseVisibleNode((Node: TreeNodeView) => {
+                var DX = Node.centerGx - CX;
+                var DY = Node.centerGy - CY;
                 var DDotR = DX * RightLimitVectorX + DY * RightLimitVectorY;
                 var DDotL = DX * LeftLimitVectorX + DY * LeftLimitVectorY;
                 if (DDotR > 0 && DDotL > 0) {
@@ -307,19 +307,19 @@ module VisModelJS {
             if (Label == null) {
                 var oldNodeView = this.ViewMap[this.FocusedLabel];
                 if (oldNodeView != null) {
-                    oldNodeView.RemoveColorStyle(ColorStyle.Highlight);
+                    oldNodeView.shape.removeColorStyle(ColorStyle.Highlight);
                 }
                 this.FocusedLabel = null;
                 return;
             }
-            var NodeView = this.ViewMap[Label];
-            if (NodeView != null) {
+            var nodeview = this.ViewMap[Label];
+            if (nodeview != null) {
                 var oldNodeView = this.ViewMap[this.FocusedLabel];
                 if (oldNodeView != null) {
-                    oldNodeView.RemoveColorStyle(ColorStyle.Highlight);
+                    oldNodeView.shape.removeColorStyle(ColorStyle.Highlight);
                 }
                 this.FocusedLabel = Label;
-                NodeView.AddColorStyle(ColorStyle.Highlight);
+                nodeview.shape.addColorStyle(ColorStyle.Highlight);
             }
         }
 
@@ -327,26 +327,13 @@ module VisModelJS {
             return this.FocusedLabel;
         }
 
-        HasMonitorNode(): boolean {
-            for(var Label in this.ViewMap) {
-                var View = this.ViewMap[Label];
-            }
-            return false;
-        }
-
-        //DrawGSN(Node: GSNNode): void {
-        //    var NewNodeView: NodeView = new NodeView(Node, true);
-        //    this.InitializeView(NewNodeView);
-        //    this.Draw();
-        //}
-
-        InitializeView(NodeView: NodeView): void {
+        InitializeView(NodeView: TreeNodeView): void {
             this.TopNodeView = NodeView;
             this.ViewMap = {};
             this.TopNodeView.UpdateViewMap(this.ViewMap);
         }
 
-        Draw(Label?: string, Duration?: number, FixedNode?: NodeView): void {
+        Draw(Label?: string, Duration?: number, FixedNode?: TreeNodeView): void {
             var t0 = Utils.getTime();
             this.Clear();
             var t1 = Utils.getTime();
@@ -362,8 +349,8 @@ module VisModelJS {
             var FixedNodeDX: number;
             var FixedNodeDY: number;
             if (FixedNode) {
-                FixedNodeGX0 = FixedNode.GetGX();
-                FixedNodeGY0 = FixedNode.GetGY();
+                FixedNodeGX0 = FixedNode.gx;
+                FixedNodeGY0 = FixedNode.gy;
             }
 
             this.LayoutEngine.DoLayout(this, TargetView);
@@ -376,21 +363,21 @@ module VisModelJS {
 
             this.FoldingAnimationTask.cancel(true);
 
-            NodeView.SetGlobalPositionCacheEnabled(true);
+            TreeNodeView.setGlobalPositionCacheEnabled(true);
             var FoldingAnimationCallbacks: Function[] = [];
 
-            var ScreenRect = this.Viewport.GetPageRectInGxGy();
+            var PageRect = this.Viewport.pageRectInGxGy;
             if (FixedNode) {
-                FixedNodeDX = FixedNode.GetGX() - FixedNodeGX0;
-                FixedNodeDY = FixedNode.GetGY() - FixedNodeGY0;
+                FixedNodeDX = FixedNode.gx - FixedNodeGX0;
+                FixedNodeDY = FixedNode.gy - FixedNodeGY0;
                 if (FixedNodeDX > 0) {
-                    ScreenRect.width += FixedNodeDX;
+                    PageRect.width += FixedNodeDX;
                 } else {
-                    ScreenRect.width -= FixedNodeDX;
-                    ScreenRect.x += FixedNodeDX;
+                    PageRect.width -= FixedNodeDX;
+                    PageRect.x += FixedNodeDX;
                 }
-                var Scale = this.Viewport.GetCameraScale();
-                var Task = this.Viewport.CreateMoveTaskFunction(FixedNodeDX, FixedNodeDY, Scale, Duration);
+                var Scale = this.Viewport.camera.scale;
+                var Task = this.Viewport.createMoveTaskFunction(FixedNodeDX, FixedNodeDY, Scale, Duration);
                 if (Task) {
                     FoldingAnimationCallbacks.push(Task);
                 } else {
@@ -401,27 +388,26 @@ module VisModelJS {
             }
 
             var t2 = Utils.getTime();
-            TargetView.UpdateNodePosition(FoldingAnimationCallbacks, Duration, ScreenRect);
-            TargetView.ClearAnimationCache();
+            TargetView.updateNodePosition(FoldingAnimationCallbacks, Duration, PageRect);
+            TargetView.clearAnimationCache();
             var t3 = Utils.getTime();
             //console.log("Update: " + (t3 - t2));
             this.FoldingAnimationTask.startMany(Duration, FoldingAnimationCallbacks);
 
-            var Shape = TargetView.GetShape();
-            this.Viewport.CameraLimitRect = new Rect(Shape.GetTreeLeftLocalX() - 100, -100, Shape.GetTreeWidth() + 200, Shape.GetTreeHeight() + 200);
+            var Shape = TargetView.shape;
+            this.Viewport.camera.limitRect = new Rect(Shape.GetTreeLeftLocalX() - 100, -100, Shape.GetTreeWidth() + 200, Shape.GetTreeHeight() + 200);
 
-            var PageRect = this.Viewport.GetPageRectInGxGy();
-            this.TopNodeView.TraverseVisibleNode((Node: NodeView) => {
-                if (Node.IsInRect(PageRect)) {
-                    this.OnScreenNodeMap[Node.Label] = Node;
+            this.TopNodeView.traverseVisibleNode((Node: TreeNodeView) => {
+                if (Node.isInRect(PageRect)) {
+                    this.OnScreenNodeMap[Node.label] = Node;
                 } else {
-                    this.HiddenNodeMap[Node.Label] = Node;
-                    this.HiddenNodeBuffer.appendChild(Node.Shape.Content);
-                    this.HiddenNodeBuffer.appendChild(Node.Shape.ShapeGroup);
+                    this.HiddenNodeMap[Node.label] = Node;
+                    this.HiddenNodeBuffer.appendChild(Node.shape.Content);
+                    this.HiddenNodeBuffer.appendChild(Node.shape.ShapeGroup);
                 }
             });
 
-            NodeView.SetGlobalPositionCacheEnabled(false);
+            TreeNodeView.setGlobalPositionCacheEnabled(false);
             this.ContentLayer.style.display = "";
             this.SVGLayer.style.display = "";
             //console.log("Animation: " + GSNShape.__Debug_Animation_TotalNodeCount + " nodes moved, " +
@@ -430,9 +416,9 @@ module VisModelJS {
         }
 
         public ForceAppendAllOutOfScreenNode() {
-            var UpdateArrow = (Node: NodeView) => {
-                if (Node.Parent) {
-                    var Arrow = Node.Shape.ArrowPath;
+            var UpdateArrow = (Node: TreeNodeView) => {
+                if (Node.parent) {
+                    var Arrow = Node.shape.ArrowPath;
                     if (Arrow.parentNode != this.HiddenNodeBuffer) {
                         this.HiddenNodeBuffer.appendChild(Arrow);
                     }
@@ -442,19 +428,19 @@ module VisModelJS {
                 var Node = this.HiddenNodeMap[<string>Label];
                 delete this.HiddenNodeMap[<string>Label];
                 this.OnScreenNodeMap[<string>Label] = Node;
-                this.ContentLayer.appendChild(Node.Shape.Content);
-                this.SVGLayerNodeGroup.appendChild(Node.Shape.ShapeGroup);
+                this.ContentLayer.appendChild(Node.shape.Content);
+                this.SVGLayerNodeGroup.appendChild(Node.shape.ShapeGroup);
                 UpdateArrow(Node);
             }
         }
 
         private UpdateHiddenNodeList() {
-            NodeView.SetGlobalPositionCacheEnabled(true);
-            var PageRect = this.Viewport.GetPageRectInGxGy();
-            var UpdateArrow = (Node: NodeView) => {
-                if (Node.Parent) {
-                    var Arrow = Node.Shape.ArrowPath;
-                    if (Node.IsConnectorInRect(PageRect)) {
+            TreeNodeView.setGlobalPositionCacheEnabled(true);
+            var PageRect = this.Viewport.pageRectInGxGy;
+            var UpdateArrow = (Node: TreeNodeView) => {
+                if (Node.parent) {
+                    var Arrow = Node.shape.ArrowPath;
+                    if (Node.isConnectorInRect(PageRect)) {
                         if (Arrow.parentNode != this.SVGLayerConnectorGroup) {
                             this.SVGLayerConnectorGroup.appendChild(Arrow);
                         }
@@ -467,29 +453,29 @@ module VisModelJS {
             };
             for (var Label in this.OnScreenNodeMap) {
                 var Node = this.OnScreenNodeMap[<string>Label];
-                if (!Node.IsInRect(PageRect)) {
+                if (!Node.isInRect(PageRect)) {
                     delete this.OnScreenNodeMap[<string>Label];
                     this.HiddenNodeMap[<string>Label] = Node;
-                    this.HiddenNodeBuffer.appendChild(Node.Shape.Content);
-                    this.HiddenNodeBuffer.appendChild(Node.Shape.ShapeGroup);
+                    this.HiddenNodeBuffer.appendChild(Node.shape.Content);
+                    this.HiddenNodeBuffer.appendChild(Node.shape.ShapeGroup);
                 }
                 UpdateArrow(Node);
             }
             for (var Label in this.HiddenNodeMap) {
                 var Node = this.HiddenNodeMap[<string>Label];
-                if (Node.IsInRect(PageRect)) {
+                if (Node.isInRect(PageRect)) {
                     delete this.HiddenNodeMap[<string>Label];
                     this.OnScreenNodeMap[<string>Label] = Node;
-                    this.ContentLayer.appendChild(Node.Shape.Content);
-                    this.SVGLayerNodeGroup.appendChild(Node.Shape.ShapeGroup);
+                    this.ContentLayer.appendChild(Node.shape.Content);
+                    this.SVGLayerNodeGroup.appendChild(Node.shape.ShapeGroup);
                 }
                 UpdateArrow(Node);
             }
-            NodeView.SetGlobalPositionCacheEnabled(false);
+            TreeNodeView.setGlobalPositionCacheEnabled(false);
             ////console.log("Visible:Hidden = " + Object.keys(this.OnScreenNodeMap).length + ":" + Object.keys(this.HiddenNodeMap).length);
         }
 
-        public Clear(): void {
+        Clear(): void {
             this.RootElement.style.display = "none";
             this.ContentLayer.innerHTML = "";
             this.SVGLayer.removeChild(this.SVGLayerConnectorGroup);
@@ -504,7 +490,7 @@ module VisModelJS {
             this.RootElement.style.display = "";
         }
 
-        GetFocusedView(): NodeView {
+        GetFocusedView(): TreeNodeView {
             if (this.ViewMap) {
                 return this.ViewMap[this.FocusedLabel];
             }
@@ -528,9 +514,9 @@ module VisModelJS {
         }
         NavigateParent(): void {
             if (this.FocusedLabel) {
-                var Parent = this.ViewMap[this.FocusedLabel].Parent;
+                var Parent = this.ViewMap[this.FocusedLabel].parent;
                 if (Parent) {
-                    this.FocusAndMoveToNode(this.ViewMap[this.FocusedLabel].Parent);
+                    this.FocusAndMoveToNode(this.ViewMap[this.FocusedLabel].parent);
                     return;
                 }
             }

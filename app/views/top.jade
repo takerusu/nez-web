@@ -30,7 +30,7 @@ block content
         span.navbar-item(id="navbar-documents")
           span.navbar-content Documents
         span.navbar-item(id="navbar-playground")
-          span.navbar-content Playground
+          span.navbar-content-active Playground
       p.title-border.title-border-left
       p.title-border.title-border-right
     .row.row-content(id="overview")
@@ -42,8 +42,8 @@ block content
     .row.row-content(id="playground", style="left:0px;")
       .header
         h2(style="display:inline-block") Try NEZ
-        span.btn.btn-primary(type="button", id="run", style="margin-left:20px;") Run
-        span.btn.btn-info.visualize-btn Visualize
+        span.btn.btn-primary(type="button", id="run", style="margin-left:20px;display:none;") Run
+        span.btn.btn-info.visualize-btn(style="display:none;") Visualize
       .input-area
         .collapse-block(id="peg4d")
           .ground-label(id="peg4d")
@@ -68,9 +68,11 @@ block content
         .collapse-block(id="input")
           .ground-label(id="input")
             span.text(id="input") Input Source&nbsp&nbsp&nbsp&nbsp
-              .dropdown(style="display: inline")
-                button.btn.btn-default.dropdown-toggle(type="button", data-toggle="dropdown", id="dropdownInput")
-                  |Import&nbsp&nbsp
-                  span.caret
+              .fileUploader(style="display: inline")
+                input.uploader(type="file", id="source")
+                button.btn.btn-default(style="position: relative; padding: 4px 12px;", id="source")
+                  span.glyphicon.glyphicon-folder-open
+                  span.text &nbsp&nbsp&nbspImport
+                span.txt(style="padding-left: 5px; font-size: 14px; padding-top: 2px; vertical-align: middle") None
           pre#inputEditor(name="example", style="height: 88%")
       include visual
