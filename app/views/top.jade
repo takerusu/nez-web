@@ -7,14 +7,15 @@ block header
 
 block loadFiles
   +js('/vendor/ace/src/ace.js')
-  +js('lib/pointerevents.min.js')
-  +js('src/vismodeljs/Utils.js')
-  +js('src/vismodeljs/Viewport.js')
-  +js('src/vismodeljs/LayoutEngine.js')
-  +js('src/vismodeljs/NodeView.js')
-  +js('src/vismodeljs/VisualModelPanel.js')
-  +js('src/vismodeljs/Shape.js')
-  +js('/vendor/app.js')
+  +js('/vendor/vmjs/lib/polymergestures.min.js')
+  +js('/vendor/vmjs/lib/pointerevents.min.js')
+  +js('/vendor/vmjs/src/vismodeljs/Utils.js')
+  +js('/vendor/vmjs/src/vismodeljs/Viewport.js')
+  +js('/vendor/vmjs/src/vismodeljs/LayoutEngine.js')
+  +js('/vendor/vmjs/src/vismodeljs/NodeView.js')
+  +js('/vendor/vmjs/src/vismodeljs/VisualModelPanel.js')
+  +js('/vendor/vmjs/src/vismodeljs/Shape.js')
+  +js('/vendor/vmjs/app.js')
   +js('/js/top.js')
 
 block content
@@ -50,19 +51,22 @@ block content
             span.text(id="peg4d") PEG4d Grammar&nbsp&nbsp&nbsp&nbsp
               .dropdown(style="display: inline")
                 span File:&nbsp&nbsp
-                button.btn.btn-default.dropdown-toggle(type="button", data-toggle="dropdown", id="dropdownInput")
+                button.btn.btn-default.dropdown-toggle.txt(type="button", data-toggle="dropdown", id="dropdownInput")
                   |None&nbsp&nbsp
                   span.caret
                 ul.dropdown-menu(role="menu", aria-labelledby="dropdownInput")
+                  li(role="presentation")
+                    .fileUploader(style="display: inline")
+                      input.uploader(type="file", id="p4d")
+                      .importp4d(style="position: relative; padding: 4px 12px;", id="p4d")
+                        span.glyphicon.glyphicon-folder-open
+                        span.text &nbsp&nbsp&nbspImport
                   li(role="presentation")
                     a(role="menuitem", tabindex="-1", value="c99") C
                   li(role="presentation")
                     a(role="menuitem", tabindex="-1", value="js4") JavaScript
                   li(role="presentation")
                     a(role="menuitem", tabindex="-1", value="json") JSON
-                  li(role="presentation")
-                    .importP4d(role="menuitem", tabindex="-1", href="#") Import
-                    input(type="file", id="importP4d", style="display:none")
           pre#pegEditor(name="example", style="height: 88%")
       .input-area
         .collapse-block(id="input")

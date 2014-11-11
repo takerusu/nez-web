@@ -5,6 +5,7 @@
 ///<reference path='../../typings/config/config.d.ts'/>
 var createNodeViewFromP4DJson;
 var VisModelJS;
+var PolymerGestures;
 var pegEditor;
 var inputEditor;
 var navbarId = ["navbar-overview", "navbar-documents", "navbar-playground"];
@@ -154,22 +155,24 @@ function visualizeCallback(e: Event){
   var p4d = pegEditor.getValue();
   var src = inputEditor.getValue();
   visualize(src, p4d, function(res){
-    console.log(res);
-    $("#visualOutput").css("display", "");
-    $("#visualOutput").empty();
-    var root = document.getElementById("visualOutput");
-    var panel = new VisModelJS.VisualModelPanel(root);
+    console.log(res, res.source.substring(0, 4));
+    if(res.source.charAt(0) == "{"){
+      $("#visualOutput").css("display", "");
+      $("#visualOutput").empty();
+      var root = document.getElementById("visualOutput");
+      var panel = new VisModelJS.VisualModelPanel(root);
 
-    var TopNode = createNodeViewFromP4DJson(JSON.parse(res.source));
+      var TopNode = createNodeViewFromP4DJson(JSON.parse(res.source));
 
-    panel.InitializeView(TopNode);
-    panel.Draw();
-    panel.Viewport.SetCamera(TopNode.GetCenterGX(), TopNode.GetCenterGY() + panel.Viewport.GetPageHeight() / 3, 1);
-    panel.addEventListener("dblclick", function (event) {
-        var node = event.node;
-        node.SetIsFolded(!node.IsFolded());
-        panel.Draw(panel.TopNodeView.Label, 300, node);
-    });
+      panel.InitializeView(TopNode);
+      panel.Draw();
+      panel.Viewport.SetCamera(TopNode.GetCenterGX(), TopNode.GetCenterGY() + panel.Viewport.GetPageHeight() / 3, 1);
+      panel.addEventListener("dblclick", function (event) {
+          var node = event.node;
+          node.SetIsFolded(!node.IsFolded());
+          panel.Draw(panel.TopNodeView.Label, 300, node);
+      });
+    }
     }, () => {
       console.log("sorry");
     });
@@ -243,6 +246,10 @@ function setSource(){
   var target = $('.fileUploader');
   target.each(function(){
     var txt = $(this).find('.txt');
+    console.log(txt);
+    if(txt.length == 0){
+      var txt = $("span[id='peg4d'] > .dropdown > .txt");
+    }
     var btn = $(this).find('.btn');
     var uploader = $(this).find('.uploader');
 

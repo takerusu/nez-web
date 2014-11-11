@@ -2,13 +2,12 @@
     font-family: 'Segoe UI', sans-serif;
 }
 
-
 .node {
 	position: absolute;
 	box-sizing: content-box;
     font-family: Arial, Meiryo;
     word-wrap: break-word;
-	pointer-events: initial;
+	pointer-events: auto;
     -webkit-user-select: none;
     -ms-user-select: none;
     -moz-user-select: none;

@@ -6,6 +6,7 @@
 .container{
   height: 100%;
   min-height: 660px;
+  min-width: 720px;
   top:0;
   position: relative;
   transition: all .2s cubic-bezier(.4,0,.2,1);
@@ -181,6 +182,9 @@ p.title-border {
 .fileUploader:hover > button{
   background-color: #ebebeb;
   border-color: #adadad;
+}
+.fileUploader:hover > .importp4d{
+  background-color: #ebebeb;
 }
 .btn{
   color:;

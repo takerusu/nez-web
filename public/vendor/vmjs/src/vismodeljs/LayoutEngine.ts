@@ -1,39 +1,30 @@
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var VisModelJS;
-(function (VisModelJS) {
-    var LayoutEngine = (function () {
-        function LayoutEngine() {
-        }
-        LayoutEngine.prototype.DoLayout = function (PictgramPanel, NodeView) {
-        };
-        return LayoutEngine;
-    })();
-    VisModelJS.LayoutEngine = LayoutEngine;
 
-    var VerticalTreeLayoutEngine = (function (_super) {
-        __extends(VerticalTreeLayoutEngine, _super);
-        function VerticalTreeLayoutEngine() {
-            _super.apply(this, arguments);
+module VisModelJS {
+    export class LayoutEngine {
+        DoLayout(PictgramPanel: VisualModelPanel, NodeView: TreeNodeView): void {
         }
-        VerticalTreeLayoutEngine.prototype.Render = function (ThisNode, DivFrag, SvgNodeFrag, SvgConnectionFrag) {
-            var _this = this;
+    }
+
+    
+    export class VerticalTreeLayoutEngine extends LayoutEngine {
+        static SideNodeHorizontalMargin = 32;
+        static SideNodeVerticalMargin = 10;
+        static ChildrenVerticalMargin = 64;
+        static ChildrenHorizontalMargin = 12;
+
+        private Render(ThisNode: TreeNodeView, DivFrag: DocumentFragment, SvgNodeFrag: DocumentFragment, SvgConnectionFrag: DocumentFragment): void {
             if (ThisNode.visible) {
                 ThisNode.shape.PrepareContent();
-                ThisNode.render(DivFrag, SvgNodeFrag, SvgConnectionFrag);
+                ThisNode.shape.Render(DivFrag, SvgNodeFrag, SvgConnectionFrag);
                 if (!ThisNode.folded) {
-                    ThisNode.forEachVisibleAllSubNodes(function (SubNode) {
-                        _this.Render(SubNode, DivFrag, SvgNodeFrag, SvgConnectionFrag);
+                    ThisNode.forEachVisibleAllSubNodes((SubNode: TreeNodeView) => {
+                        this.Render(SubNode, DivFrag, SvgNodeFrag, SvgConnectionFrag);
                     });
                 }
             }
-        };
+        }
 
-        VerticalTreeLayoutEngine.prototype.DoLayout = function (PictgramPanel, NodeView) {
+        DoLayout(PictgramPanel: VisualModelPanel, NodeView: TreeNodeView): void {
             var DivFragment = document.createDocumentFragment();
             var SvgNodeFragment = document.createDocumentFragment();
             var SvgConnectionFragment = document.createDocumentFragment();
@@ -53,35 +44,33 @@ var VisModelJS;
             PictgramPanel.ContentLayer.appendChild(DivFragment);
             PictgramPanel.SVGLayer.appendChild(SvgConnectionFragment);
             PictgramPanel.SVGLayer.appendChild(SvgNodeFragment);
-        };
+        }
 
-        VerticalTreeLayoutEngine.prototype.PrepareNodeSize = function (ThisNode) {
-            var _this = this;
+        private PrepareNodeSize(ThisNode: TreeNodeView): void {
             var Shape = ThisNode.shape;
             Shape.GetNodeWidth();
             Shape.GetNodeHeight();
             if (ThisNode.folded) {
                 return;
             }
-            ThisNode.forEachVisibleLeftNodes(function (SubNode) {
-                _this.PrepareNodeSize(SubNode);
+            ThisNode.forEachVisibleLeftNodes((SubNode: TreeNodeView) => {
+                this.PrepareNodeSize(SubNode);
             });
-            ThisNode.forEachVisibleRightNodes(function (SubNode) {
-                _this.PrepareNodeSize(SubNode);
+            ThisNode.forEachVisibleRightNodes((SubNode: TreeNodeView) => {
+                this.PrepareNodeSize(SubNode);
             });
-            ThisNode.forEachVisibleChildren(function (SubNode) {
-                _this.PrepareNodeSize(SubNode);
+            ThisNode.forEachVisibleChildren((SubNode: TreeNodeView) => {
+                this.PrepareNodeSize(SubNode);
             });
-        };
+        }
 
-        VerticalTreeLayoutEngine.prototype.Layout = function (ThisNode) {
-            var _this = this;
+        private Layout(ThisNode: TreeNodeView): void {
             if (!ThisNode.visible) {
                 return;
             }
             var Shape = ThisNode.shape;
             if (!ThisNode.shouldReLayout) {
-                ThisNode.traverseVisibleNode(function (Node) {
+                ThisNode.traverseVisibleNode((Node: TreeNodeView) => {
                     Node.shape.FitSizeToContent();
                 });
                 return;
@@ -100,7 +89,7 @@ var VisModelJS;
             if (ThisNode.leftNodes != null) {
                 var LeftNodesWidth = 0;
                 var LeftNodesHeight = -VerticalTreeLayoutEngine.SideNodeVerticalMargin;
-                ThisNode.forEachVisibleLeftNodes(function (SubNode) {
+                ThisNode.forEachVisibleLeftNodes((SubNode: TreeNodeView) => {
                     SubNode.shape.FitSizeToContent();
                     LeftNodesHeight += VerticalTreeLayoutEngine.SideNodeVerticalMargin;
                     SubNode.relativeX = -(SubNode.shape.GetNodeWidth() + VerticalTreeLayoutEngine.SideNodeHorizontalMargin);
@@ -110,7 +99,7 @@ var VisModelJS;
                 });
                 var LeftShift = (ThisNode.shape.GetNodeHeight() - LeftNodesHeight) / 2;
                 if (LeftShift > 0) {
-                    ThisNode.forEachVisibleLeftNodes(function (SubNode) {
+                    ThisNode.forEachVisibleLeftNodes((SubNode: TreeNodeView) => {
                         SubNode.relativeY += LeftShift;
                     });
                 }
@@ -122,7 +111,7 @@ var VisModelJS;
             if (ThisNode.rightNodes != null) {
                 var RightNodesWidth = 0;
                 var RightNodesHeight = -VerticalTreeLayoutEngine.SideNodeVerticalMargin;
-                ThisNode.forEachVisibleRightNodes(function (SubNode) {
+                ThisNode.forEachVisibleRightNodes((SubNode: TreeNodeView) => {
                     SubNode.shape.FitSizeToContent();
                     RightNodesHeight += VerticalTreeLayoutEngine.SideNodeVerticalMargin;
                     SubNode.relativeX = (ThisNodeWidth + VerticalTreeLayoutEngine.SideNodeHorizontalMargin);
@@ -132,7 +121,7 @@ var VisModelJS;
                 });
                 var RightShift = (ThisNode.shape.GetNodeHeight() - RightNodesHeight) / 2;
                 if (RightShift > 0) {
-                    ThisNode.forEachVisibleRightNodes(function (SubNode) {
+                    ThisNode.forEachVisibleRightNodes((SubNode: TreeNodeView) => {
                         SubNode.relativeY += RightShift;
                     });
                 }
@@ -151,14 +140,14 @@ var VisModelJS;
             var ChildrenBottomWidth = 0;
             var ChildrenHeight = 0;
             var FormarUnfoldedChildHeight = Infinity;
-            var FoldedNodeRun = [];
+            var FoldedNodeRun: TreeNodeView[] = [];
             var VisibleChildrenCount = 0;
             if (ThisNode.childNodes != null && ThisNode.childNodes.length > 0) {
                 var IsPreviousChildFolded = false;
 
-                ThisNode.forEachVisibleChildren(function (SubNode) {
+                ThisNode.forEachVisibleChildren((SubNode: TreeNodeView) => {
                     VisibleChildrenCount++;
-                    _this.Layout(SubNode);
+                    this.Layout(SubNode);
                     var ChildTreeWidth = SubNode.shape.GetTreeWidth();
                     var ChildHeadWidth = SubNode.folded ? SubNode.shape.GetNodeWidth() : SubNode.shape.GetHeadWidth();
                     var ChildHeadHeight = SubNode.folded ? SubNode.shape.GetNodeHeight() : SubNode.shape.GetHeadHeight();
@@ -187,7 +176,7 @@ var VisModelJS;
                                         FoldedNodeRun[i].relativeX += ChildHeadLeftSideMargin - WidthDiff;
                                     }
                                 } else {
-                                    var FoldedRunMargin = (ChildHeadLeftSideMargin - WidthDiff) / (FoldedNodeRun.length + 1);
+                                    var FoldedRunMargin = (ChildHeadLeftSideMargin - WidthDiff) / (FoldedNodeRun.length + 1)
                                     for (var i = 0; i < FoldedNodeRun.length; i++) {
                                         FoldedNodeRun[i].relativeX += FoldedRunMargin * (i + 1);
                                     }
@@ -216,9 +205,9 @@ var VisModelJS;
 
                 var ChildrenWidth = Math.max(ChildrenTopWidth, ChildrenBottomWidth) - VerticalTreeLayoutEngine.ChildrenHorizontalMargin;
                 var ShiftX = (ChildrenWidth - ThisNodeWidth) / 2;
-
+                
                 if (VisibleChildrenCount == 1) {
-                    ThisNode.forEachVisibleChildren(function (SubNode) {
+                    ThisNode.forEachVisibleChildren((SubNode: TreeNodeView) => {
                         ShiftX = -SubNode.shape.GetTreeLeftLocalX();
                         if (!SubNode.hasSideNode || SubNode.folded) {
                             var ShiftY = 0;
@@ -236,7 +225,7 @@ var VisModelJS;
                     });
                 }
                 TreeLeftX = Math.min(TreeLeftX, -ShiftX);
-                ThisNode.forEachVisibleChildren(function (SubNode) {
+                ThisNode.forEachVisibleChildren((SubNode: TreeNodeView) => {
                     SubNode.relativeX -= ShiftX;
                 });
 
@@ -245,13 +234,8 @@ var VisModelJS;
             }
             Shape.SetTreeRect(TreeLeftX, 0, TreeRightX - TreeLeftX, TreeHeight);
             //console.log(ThisNode.Label + ": " + (<any>ThisNode.Shape).TreeBoundingBox.toString());
-        };
-        VerticalTreeLayoutEngine.SideNodeHorizontalMargin = 32;
-        VerticalTreeLayoutEngine.SideNodeVerticalMargin = 10;
-        VerticalTreeLayoutEngine.ChildrenVerticalMargin = 64;
-        VerticalTreeLayoutEngine.ChildrenHorizontalMargin = 12;
-        return VerticalTreeLayoutEngine;
-    })(LayoutEngine);
-    VisModelJS.VerticalTreeLayoutEngine = VerticalTreeLayoutEngine;
-})(VisModelJS || (VisModelJS = {}));
-//# sourceMappingURL=LayoutEngine.js.map
+        }
+
+    }
+
+}

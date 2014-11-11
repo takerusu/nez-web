@@ -306,7 +306,7 @@ var VisModelJS;
                     _this.scrollManager.onMouseWheel(e, _this);
                 }
             };
-            this.panel.RootElement.addEventListener('mousewheel', OnWheel);
+            this.panel.RootElement.addEventListener('wheel', OnWheel);
         }
         Object.defineProperty(ViewportManager.prototype, "camera", {
             get: function () {

@@ -191,13 +191,6 @@ var VisModelJS;
         });
 
         /**
-        Append content elements of this node to layer fragments.
-        */
-        TreeNodeView.prototype.render = function (htmlLayerFlagment, svgLayerFlagment, svgConnectorFlagment) {
-            this._shape.Render(htmlLayerFlagment, svgLayerFlagment, svgConnectorFlagment);
-        };
-
-        /**
         Try to reuse shape.
         */
         TreeNodeView.prototype.copyFlagsFromOldView = function (oldView) {
