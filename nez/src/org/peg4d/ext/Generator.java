@@ -6,10 +6,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.peg4d.Main;
-import org.peg4d.ParsingCharset;
 import org.peg4d.ParsingObject;
 import org.peg4d.UList;
 import org.peg4d.UMap;
+import org.peg4d.Utils;
 
 public class Generator {
 	private class Counter {
@@ -22,7 +22,7 @@ public class Generator {
 	private final static String TAB = " ";
 	private final static String LF = "\n";
 	private final static String CRLF = "\r\n";
-	
+
 	public Generator(String fileName) {
 		if(fileName != null) {
 			try {
@@ -78,7 +78,7 @@ public class Generator {
 			out = null;
 		}
 	}
-	
+
 	public final void writePego(ParsingObject pego) {
 		this.writePego(pego, "");
 		this.write(LF);
@@ -89,8 +89,8 @@ public class Generator {
 		if(pego.size() == 0) {
 			this.write(LF);
 			this.write(indent);
-			this.write("{#" + pego.getTag()+ " "); 
-			this.write(ParsingCharset.quoteString('\'', pego.getText(), '\''));
+			this.write("{#" + pego.getTag()+ " ");
+			this.write(Utils.quoteString('\'', pego.getText(), '\''));
 			this.write("}");
 		}
 		else {
@@ -106,7 +106,7 @@ public class Generator {
 			this.write("}");
 		}
 	}
-	
+
 	public final void writeCommaSeparateValue(ParsingObject pego, double ratio) {
 		UList<String> names = new UList<String>(new String[8]);
 		UMap<Counter> schema =  new UMap<Counter>();
@@ -132,7 +132,7 @@ public class Generator {
 		}
 		this.close();
 	}
-	
+
 	private void extractSchema(ParsingObject root, ParsingObject pego, String prefix, UList<String> names, UMap<Counter> schema) {
 		for(int i = 0; i < pego.size(); i++) {
 			ParsingObject p = pego.get(i);
@@ -190,7 +190,7 @@ public class Generator {
 		}
 		write(text);
 	}
-	
+
 	private final boolean needsCsvQuote(String text) {
 		if(text.length() > 0) {
 			for(int i = 0; i < text.length(); i++) {
@@ -202,7 +202,7 @@ public class Generator {
 		}
 		return false;
 	}
-	
+
 	private final String quotedCsvString(String text) {
 		StringBuilder sb = new StringBuilder();
 		sb.append('"');
@@ -227,8 +227,8 @@ public class Generator {
 		sb.append('"');
 		return sb.toString();
 	}
-	
-	
+
+
 	public final void writeJSON(ParsingObject pego) {
 		String indent = TAB;
 		write("", "", "{");
@@ -241,10 +241,10 @@ public class Generator {
 	private final void writeJSON(String lf, String indent, ParsingObject pego) {
 
 		if(pego.size() > 0) {
-//			if(pego.size() == 1) {
-//				writeJSON(lf, indent, pego.get(0));  // flatten
-//			}
-//			else
+			//			if(pego.size() == 1) {
+			//				writeJSON(lf, indent, pego.get(0));  // flatten
+			//			}
+			//			else
 			if(isJSONArray(pego)) {
 				writeJSONArray(lf, indent, pego);
 			}
@@ -254,24 +254,24 @@ public class Generator {
 		}
 		else {
 			String text = pego.getText();
-			text = ParsingCharset.quoteString('"', text, '"');
+			text = Utils.quoteString('"', text, '"');
 			write("", "", text);
 		}
 	}
 
 	private boolean isJSONArray(ParsingObject pego) {
-//		UMap<Counter> schema =  new UMap<Counter>();
-//		for(int i = 0; i < pego.size(); i++) {
-//			ParsingObject p = pego.get(i);
-//			String tag = p.getTag().toString();
-//			Counter c = schema.get(tag);
-//			if(c != null) { // found duplicated
-//				return true;
-//			}
-//			c = new Counter();
-//			schema.put(tag, c);
-//		}
-//		return false;
+		//		UMap<Counter> schema =  new UMap<Counter>();
+		//		for(int i = 0; i < pego.size(); i++) {
+		//			ParsingObject p = pego.get(i);
+		//			String tag = p.getTag().toString();
+		//			Counter c = schema.get(tag);
+		//			if(c != null) { // found duplicated
+		//				return true;
+		//			}
+		//			c = new Counter();
+		//			schema.put(tag, c);
+		//		}
+		//		return false;
 		if(pego.size() > 1){
 			return true;
 		}
@@ -309,10 +309,10 @@ public class Generator {
 			write(LF, indent, "}");
 		} else {
 			String text = pego.getText();
-			text = ParsingCharset.quoteString('"', text, '"');
+			text = Utils.quoteString('"', text, '"');
 			write(lf, "", text);
 		}
 	}
-	
-	
+
+
 }

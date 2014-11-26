@@ -1,121 +1,81 @@
 package org.peg4d;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 import java.util.TreeMap;
 
+import org.peg4d.data.RelationBuilder;
 import org.peg4d.ext.Generator;
+import org.peg4d.pegcode.GrammarFormatter;
 
 public class Main {
-	public final static String  ProgName  = "PEG4d";
+	public final static String  ProgName  = "Nez";
 	public final static String  CodeName  = "yokohama";
 	public final static int     MajorVersion = 0;
-	public final static int     MinerVersion = 2;
+	public final static int     MinerVersion = 9;
 	public final static int     PatchLevel   = 0;
 	public final static String  Version = "" + MajorVersion + "." + MinerVersion + "." + PatchLevel;
-	public final static String  Copyright = "Copyright (c) 2014, Konoha4e project authors";
+	public final static String  Copyright = "Copyright (c) 2014, Nez project authors";
 	public final static String  License = "BSD-Style Open Source";
 
-	// -p konoha.peg
+	public final static void main(String[] args) {
+		parseCommandOption(args);
+		if(Command == null) {
+			showUsage("unspecfied command");
+		}
+		try {
+			Method m = Main.class.getMethod(Command);
+			m.invoke(null);
+		} catch (NoSuchMethodException e) {
+			showUsage("unknown command: " + Command);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static String Command = null;
+	// -p konoha.p4d
 	private static String GrammarFile = null; // default
-
-	// -s StartingPoint
+	// -s, --string
+	private static String InputString = null;
+	// -i, --input
+	private static String InputFileName = null;
+	// -o, --output
+	private static String OutputFileName = null;
+	// -t, --type
+	private static String OutputType = null;
+	// --start
 	private static String StartingPoint = "File";  // default
-
-	// -t output
-	private static String OutputType = "pego";  // default
-
-	// -f format
-	private static String PEGFormatter = null;  // default
-
-	// -i
-	private static boolean ShellMode = false;
-
-	// -c
-	public static boolean RecognitionOnlyMode = false;
-	
 	// -W
 	public static int WarningLevel = 1;
-
-	// --find
-	private static int FindFileIndex = -1;
-	
-	//
-	private static String InputFileName = null;
-	
-	// -o
-	private static String OutputFileName = null;
-
+	// -g
+	public static int DebugLevel = 0;
 	// --verbose
 	public static boolean VerboseMode    = false;
-
-	// --verbose:peg
-	public static boolean VerbosePeg = false;
-
 	// --test
 	public static boolean TestMode = true;
 
 	// --a
 	public static boolean DiskMode = false;
-	
-	// --verbose:stat
-	public static int     StatLevel = -1;
 
-	// --memo:no
-	// --memo:no
-	public static String  ParserName = null;
-	public static boolean TracingMemo = true;
-	public static boolean UseFifo = false;
-	public static boolean AllExpressionMemo  = false;
-	public static boolean PackratStyleMemo   = true;
-	public static boolean ObjectFocusedMemo  = false;
-	
+	//--infer
+	public static boolean InferRelation = false;
+
 	// -O
 	public static int OptimizationLevel = 2;
-	public static int MemoFactor = 256;
 	public static String CSVFileName = "results.csv";
 
-	public final static void main(String[] args) {
-		parseCommandArguments(args);
-		if(FindFileIndex != -1) {
-			Grammar peg = new GrammarFactory().newGrammar("main");
-			for(int i = FindFileIndex; i < args.length; i++) {
-				peg.importGrammar(args[i]);
-			}
-			peg.verifyRules();
-			performShell2(peg);
-			return;
-		}
-		Grammar peg = GrammarFile == null ? GrammarFactory.Grammar : new GrammarFactory().newGrammar("main", GrammarFile);
-		if(PEGFormatter != null) {
-			GrammarFormatter fmt = loadGrammarFormatter(PEGFormatter);
-			StringBuilder sb = new StringBuilder();
-			fmt.formatHeader(sb);
-			UList<ParsingRule> list = peg.getRuleList();
-			for(int i = 0; i < 0; i++) {
-				ParsingRule r = list.ArrayValues[i];
-				fmt.formatRule(r.ruleName, r.expr, sb);
-			}
-			fmt.formatFooter(sb);
-			System.out.println(sb.toString());
-		}
-		if(InputFileName != null) {
-			loadInputFile(peg, InputFileName);
-		}
-		else {
-			ShellMode = true;
-		}
-		if(ShellMode) {
-			performShell(peg);
-		}
-	}
-	
-	private static void parseCommandArguments(String[] args) {
+	private static String[] FileList = null;
+
+	private static void parseCommandOption(String[] args) {
 		int index = 0;
+		if(args.length > 0) {
+			if(!args[0].startsWith("-")) {
+				Command = args[0];
+				index = 1;
+			}
+		}
 		while (index < args.length) {
 			String argument = args[index];
 			if (!argument.startsWith("-")) {
@@ -126,137 +86,128 @@ public class Main {
 				GrammarFile = args[index];
 				index = index + 1;
 			}
-			else if ((argument.equals("--find")) && (index < args.length)) {
-				FindFileIndex = index;
-				return;
+			else if ((argument.equals("-s") || argument.equals("--string")) && (index < args.length)) {
+				InputString = args[index];
+				index = index + 1;
 			}
-			else if ((argument.equals("-s") || argument.equals("--start")) && (index < args.length)) {
+			else if ((argument.equals("-i") || argument.equals("--input")) && (index < args.length)) {
+				InputFileName = args[index];
+				index = index + 1;
+			}
+			else if ((argument.equals("-o") || argument.equals("--output")) && (index < args.length)) {
+				OutputFileName = args[index];
+				if(OutputType == null && OutputFileName.lastIndexOf('.') > 0) {
+					OutputType = OutputFileName.substring(OutputFileName.lastIndexOf('.')+1);
+				}
+				index = index + 1;
+			}
+			else if ((argument.equals("-t") || argument.equals("--type")) && (index < args.length)) {
+				OutputType = args[index];
+				index = index + 1;
+			}
+			else if (argument.equals("--start") && (index < args.length)) {
 				StartingPoint = args[index];
 				index = index + 1;
 			}
-			else if ((argument.equals("-f") || argument.equals("--format")) && (index < args.length)) {
-				PEGFormatter = args[index];
-				index = index + 1;
-			}
-			else if(argument.startsWith("-M")) {
-				Main.MemoFactor  = ParsingCharset.parseInt(argument.substring(2), 256);
-			}
 			else if (argument.startsWith("-O")) {
-				OptimizationLevel = ParsingCharset.parseInt(argument.substring(2), 2);
+				OptimizationLevel = Utils.parseInt(argument.substring(2), 2);
 			}
 			else if (argument.startsWith("-W")) {
-				WarningLevel = ParsingCharset.parseInt(argument.substring(2), 2);
+				WarningLevel = Utils.parseInt(argument.substring(2), 2);
 			}
-			else if (argument.equals("-i")) {
-				Main.OptimizationLevel = 0;
-				ShellMode = true;
-			}
-			else if (argument.equals("-c")) {
-				RecognitionOnlyMode = true;
+			else if (argument.startsWith("-g")) {
+				DebugLevel = Utils.parseInt(argument.substring(2), 1);
 			}
 			else if (argument.equals("-a")) {
 				DiskMode = true;
 			}
-			else if(argument.startsWith("--test")) {
-				TestMode = true;
-			}
-			else if(argument.startsWith("--stat")) {
-				StatLevel = ParsingCharset.parseInt(argument.substring(6), 1);
-				OutputType = "none";
-			}
-			else if(argument.startsWith("--csv") && (index < args.length)) {
-				CSVFileName = args[index];
-				if(!CSVFileName.endsWith(".csv")) {
-					Main._Exit(1, "invalid csv file: " + CSVFileName);
-				}
-				index = index + 1;
-			}
-			else if ((argument.equals("-t") || argument.equals("--target")) && (index < args.length)) {
-				OutputType = args[index];
-				index = index + 1;
-			}
-			else if ((argument.equals("-o") || argument.equals("--out")) && (index < args.length)) {
-				OutputFileName = args[index];
-				if(OutputFileName.endsWith(".csv")) {
-					OutputType = "csv";
-				}
-				if(OutputFileName.endsWith(".json")) {
-					OutputType = "json";
-				}
-				index = index + 1;
-			}
-			else if (argument.equals("--name")) {
-				ParserName = args[index];
-				index = index + 1;
+			else if (argument.equals("--infer")) {
+				InferRelation = true;
 			}
 			else if(argument.startsWith("--memo")) {
-				if(argument.equals("--memo:data")) {
-					AllExpressionMemo = false;
-					PackratStyleMemo = false;
-					ObjectFocusedMemo = true;
+				if(argument.equals("--memo:none")) {
+					MemoizationManager.NoMemo = true;
 				}
-				else if(argument.equals("--memo:none")) {
-					AllExpressionMemo = false;
-					PackratStyleMemo = false;
-					ObjectFocusedMemo = false;
-					TracingMemo = false;
+				else if(argument.equals("--memo:packrat")) {
+					MemoizationManager.PackratParsing = true;
 				}
-				else if(argument.equals("--memo:all")) {
-					AllExpressionMemo = true;
-					PackratStyleMemo = false;
-					ObjectFocusedMemo = false;
+				else if(argument.equals("--memo:window")) {
+					MemoizationManager.SlidingWindowParsing = true;
 				}
-				else if(argument.equals("--memo:static")) {
-					TracingMemo = false;
+				else if(argument.equals("--memo:slide")) {
+					MemoizationManager.SlidingLinkedParsing = true;
 				}
-				else if(argument.equals("--memo:fifo")) {
-					UseFifo = true;
+				else if(argument.equals("--memo:notrace")) {
+					MemoizationManager.Tracing = false;
 				}
 				else {
-					ShowUsage("unknown option: " + argument);
+					int distance = Utils.parseInt(argument.substring(7), -1);
+					if(distance >= 0) {
+						MemoizationManager.BacktrackBufferSize  = distance;
+					}
+					else {
+						showUsage("unknown option: " + argument);
+					}
 				}
 			}
 			else if(argument.startsWith("--verbose")) {
-				VerboseMode = true;
+				if(argument.equals("--verbose:memo")) {
+					MemoizationManager.VerboseMemo = true;
+				}
+				else {
+					VerboseMode = true;
+				}
 			}
 			else {
-				ShowUsage("unknown option: " + argument);
+				showUsage("unknown option: " + argument);
 			}
 		}
-		if (index < args.length) {
-			InputFileName = args[index];
-			index++;
+		if(index < args.length) {
+			FileList = new String[args.length - index];
+			System.arraycopy(args, index, FileList, 0, FileList.length);
 		}
-		else {
-			Main.OptimizationLevel = 0;
-			ShellMode = true;
+		if(GrammarFile == null) {
+			if(InputFileName != null) {
+				GrammarFile = guessGrammarFile(InputFileName);
+			}
 		}
 	}
 
-	public final static void ShowUsage(String Message) {
-		System.out.println(ProgName + " :");
-		System.out.println("  -p <FILE>                 Specify PEG file  default: PEG4d grammar");
-		System.out.println("  -s | --start <NAME>       Specify Non-Terminal as the starting point. default: TopLevel");
-		System.out.println("  -t <type>                 Specify output type. default: pego");
-		System.out.println("     tag|pego|none|json|csv");
-		System.out.println("  -c                        Invoke as checker (without output generation). Exit 1 when failed");
-		System.out.println("  -f | --format<type>       Specify PEG formatter");
-		System.out.println("  -W<num>                   Warning Level (default:1)");
-		System.out.println("  -O<num>                   Optimization Level (default:2)");
-		System.out.println("  --memo:x                  Memo configuration");
-		System.out.println("     no|packrat|fifo");
-		System.out.println("  -M<num>                   Memo factor (default: 100)");
-		System.out.println("  --verbose                 Printing Debug infomation");
-		System.out.println("  --verbose:peg             Printing Peg/Debug infomation");
+	final static void showUsage(String Message) {
+		System.out.println("nez <command> optional files");
+		System.out.println("  -p | --peg <filename>      Specify an PEGs grammar file");
+		System.out.println("  -i | --input <filename>    Specify an input file");
+		System.out.println("  -s | --string <string>     Specify an input string");
+		System.out.println("  -o | --output <filename>   Specify an output file");
+		System.out.println("  -t | --type <filename>     Specify an output type");
+		System.out.println("  --start <NAME>             Specify Non-Terminal as the starting point");
+		System.out.println("  -W<num>                    Warning Level (default:1)");
+		System.out.println("  -O<num>                    Optimization Level (default:2)");
+		System.out.println("  -g                         Debug Level");
+		System.out.println("  --memo:x                   Memo configuration");
+		System.out.println("     none|packrat|window|slide|notrace");
+		System.out.println("  --memo:<num>               Expected backtrack distance (default: 256)");
+		System.out.println("  --verbose                  Printing Debug infomation");
+		System.out.println("  --verbose:memo             Printing Memoization information");
+		System.out.println("  --infer                    Specify an inference schema for rel command");
+		System.out.println("");
+		System.out.println("The most commonly used nez commands are:");
+		System.out.println("  parse        Parse -i input or -s string to -o output");
+		System.out.println("  check        Parse -i input or -s string");
+		System.out.println("  shell        Try parsing in an interactive way");
+		System.out.println("  rel          Convert -f file to relations (csv file)");
+		System.out.println("  conv         Convert PEG4d rules to the specified format in -o");
+		System.out.println("  find         Search nonterminals that can match inputs");
 		Main._Exit(0, Message);
 	}
 
 	private final static UMap<Class<?>> driverMap = new UMap<Class<?>>();
 	static {
-		driverMap.put("p4d", org.peg4d.GrammarFormatter.class);
-		driverMap.put("peg", org.peg4d.GrammarFormatter.class);
-		driverMap.put("vm", org.peg4d.CodeGenerator.class);
-		driverMap.put("svm", org.peg4d.SimpleCodeGenerator.class);
+		driverMap.put("p4d", org.peg4d.pegcode.PEG4dFormatter.class);
+		driverMap.put("peg", org.peg4d.pegcode.PEG4dFormatter.class);
+		driverMap.put("c2", org.peg4d.pegcode.CGenerator2.class);
+		driverMap.put("pegjs", org.peg4d.pegcode.PEGjsFormatter.class);
+		driverMap.put("py", org.peg4d.pegcode.PythonGenerator.class);
 	}
 
 	private static GrammarFormatter loadDriverImpl(String driverName) {
@@ -268,7 +219,7 @@ public class Main {
 		}
 		return null;
 	}
-	
+
 	private static GrammarFormatter loadGrammarFormatter(String driverName) {
 		GrammarFormatter d = loadDriverImpl(driverName);
 		if(d == null) {
@@ -288,52 +239,93 @@ public class Main {
 		}
 		return d;
 	}
-	
-	private synchronized static void loadInputFile(Grammar peg, String fileName) {
-		String startPoint = StartingPoint;
-		Main.printVerbose("FileName", fileName);
+
+//	private synchronized static void loadStat(Grammar peg, String fileName) {
+//		String startPoint = StartingPoint;
+//		ParsingSource source = null;
+//		ParsingContext context = null;
+//		ParsingObject po = null;
+//		long bestTime = Long.MAX_VALUE;
+//		ParsingStatistics stat = null;
+//		for(int i = 0; i < 20; i++) {
+//			source = Main.loadSource(peg, fileName);
+//			context = new ParsingContext(Main.loadSource(peg, fileName));
+//			stat = new ParsingStatistics(peg, source);
+//			context.initStat(stat);
+//			if(Main.RecognitionOnlyMode) {
+//				context.match(peg, startPoint, new MemoizationManager());
+//			}
+//			else {
+//				po = context.parse(peg, startPoint, new MemoizationManager());
+//			}
+//			long t = stat.end();
+//			System.out.println("ErapsedTime: " + t);
+//			if(t < bestTime) {
+//				bestTime = t;
+//			}
+//			if(t > 60000 * 5) {
+//				break;
+//			}
+//		}
+//		stat.ErapsedTime = bestTime;
+//		stat.end(po, context);
+//	}
+
+	public final static String guessGrammarFile(String fileName) {
+		int loc = fileName.lastIndexOf('.');
+		if(loc > 0) {
+			String ext = fileName.substring(loc+1);
+			String grammarFile = "org/peg4d/lib/" + ext + ".p4d";
+			InputStream stream = Main.class.getResourceAsStream("/" + grammarFile);
+			//System.out.println("grammar: " + grammarFile + ", stream: " + stream);
+			if(stream != null) {
+				return grammarFile;
+			}
+		}
+		return null;
+	}
+
+	static Grammar newGrammar() {
+		return GrammarFile == null ? GrammarFactory.Grammar : new GrammarFactory().newGrammar("main", GrammarFile);
+	}
+
+	static ParsingSource newParsingSource(Grammar peg) {
+		if(InputFileName != null) {
+			return ParsingSource.loadSource(InputFileName);
+		}
+		if(InputString == null) {
+			showUsage("unspecfied input; expected -i or -s option");
+		}
+		return new StringSource(InputString);
+	}
+
+	public static void check() {
+		Grammar peg = newGrammar();
+		ParsingContext context = new ParsingContext(newParsingSource(peg));
+		boolean res = context.match(peg, StartingPoint, new MemoizationManager());
+		System.exit(res ? 0 : 1);
+	}
+
+	public static void parse() {
+		Grammar peg = newGrammar();
 		Main.printVerbose("Grammar", peg.getName());
 		Main.printVerbose("StartingPoint", StartingPoint);
-		ParsingSource source = Main.loadSource(peg, fileName);
-		ParsingContext context = new ParsingContext(Main.loadSource(peg, fileName));
-		if(Main.StatLevel == 0) {
-			long t = System.currentTimeMillis();
-			context.setRecognitionMode(true);
-			while(System.currentTimeMillis()-t < 4000) {
-				System.out.print(".");System.out.flush();
-				context.parseChunk(peg, startPoint);
-				context.pos = 0;
-			}
-			context.setRecognitionMode(false);
-			context.initMemo(null);
-			System.gc();
-			try{
-				Thread.sleep(500);
-			}catch(InterruptedException e){
-			}
-			System.out.println(" GO!!");
-		}
-		source = Main.loadSource(peg, fileName);
-		context = new ParsingContext(source);
-		ParsingStat stat = null;
-		if(OutputType.equalsIgnoreCase("stat")) {
-			context.initStat(new ParsingStat(peg, source));
-		}
-		if(Main.RecognitionOnlyMode) {
-			boolean res = context.match(peg, startPoint, null);
-//			if(OutputType.equalsIgnoreCase("stat")) {
-//				context.recordStat(null);
-//				return;
-//			}
-			System.exit(res ? 0 : 1);
-		}
-		ParsingObject pego = context.parse(peg, startPoint, new ParsingMemoConfigure());
+		ParsingContext context = new ParsingContext(newParsingSource(peg));
+		ParsingObject pego = context.parse(peg, StartingPoint, new MemoizationManager());
 		if(context.isFailure()) {
 			System.out.println(context.source.formatPositionLine("error", context.fpos, context.getErrorMessage()));
+			System.out.println(context.source.formatPositionLine("maximum matched", context.head_pos, ""));
+			if(Main.DebugLevel > 0) {
+				System.out.println(context.maximumFailureTrace);
+			}
 			return;
 		}
 		if(context.hasByteChar()) {
 			System.out.println(context.source.formatPositionLine("unconsumed", context.pos, ""));
+			System.out.println(context.source.formatPositionLine("maximum matched", context.head_pos, ""));
+			if(Main.DebugLevel > 0) {
+				System.out.println(context.maximumFailureTrace);
+			}
 		}
 		if(OutputType.equalsIgnoreCase("stat")) {
 			context.recordStat(pego);
@@ -376,14 +368,76 @@ public class Main {
 			m.put(key, n+1);
 		}
 	}
-	
-	
+
+	public static void rel() {
+		Grammar peg = newGrammar();
+		ParsingContext context = new ParsingContext(newParsingSource(peg));
+		ParsingObject pego = context.parse(peg, StartingPoint, new MemoizationManager());
+		RelationBuilder RBuilder = new RelationBuilder(pego);
+		RBuilder.build(InferRelation);
+	}
+
+	private static int StatTimes = 10;
+	public static void parse_stat() {
+		Grammar peg = newGrammar();
+		ParsingContext context = null;
+		ParsingObject po = null;
+		long bestTime = Long.MAX_VALUE;
+		ParsingStatistics stat = null;
+		for(int i = 0; i < StatTimes; i++) {
+			ParsingSource source = newParsingSource(peg);
+			context = new ParsingContext(source);
+			stat = new ParsingStatistics(peg, source);
+			context.initStat(stat);
+			po = context.parse(peg, StartingPoint, new MemoizationManager());
+			long t = stat.end();
+			Main.printVerbose("ErapsedTime", "" + t + "ms");
+			if(t < bestTime) {
+				bestTime = t;
+			}
+			if(t > 200000) {
+				break;
+			}
+		}
+		stat.ErapsedTime = bestTime;
+		stat.end(po, context);
+		outputMap(po);
+	}
+
+	public static void check_stat() {
+		Grammar peg = newGrammar();
+		ParsingContext context = null;
+		ParsingObject po = null;
+		long bestTime = Long.MAX_VALUE;
+		ParsingStatistics stat = null;
+		for(int i = 0; i < StatTimes; i++) {
+			ParsingSource source = newParsingSource(peg);
+			context = new ParsingContext(source);
+			stat = new ParsingStatistics(peg, source);
+			context.initStat(stat);
+			context.match(peg, StartingPoint, new MemoizationManager());
+			long t = stat.end();
+			Main.printVerbose("ErapsedTime", "" + t + "ms");
+			if(t < bestTime) {
+				bestTime = t;
+			}
+			if(t > 200000) {
+				break;
+			}
+		}
+		stat.ErapsedTime = bestTime;
+		stat.end(po, context);
+	}
+
+
+
 	private final static void displayShellVersion(Grammar peg) {
 		Main._PrintLine(ProgName + "-" + Version + " (" + CodeName + ") on " + Main._GetPlatform());
 		Main._PrintLine(Copyright);
 	}
 
-	public final static void performShell(Grammar peg) {
+	public final static void shell() {
+		Grammar peg = newGrammar();
 		displayShellVersion(peg);
 		Main._PrintLine("Tips: \\Name to switch the starting point to Name");
 		int linenum = 1;
@@ -394,7 +448,7 @@ public class Main {
 				startPoint = switchStaringPoint(peg, line.substring(1), startPoint);
 				continue;
 			}
-			ParsingSource source = new StringSource(peg, "(stdin)", linenum, line);
+			ParsingSource source = new StringSource("(stdin)", linenum, line);
 			ParsingContext context = new ParsingContext(source);
 			ParsingObject po = context.parse(peg, startPoint);
 			if(context.isFailure()) {
@@ -407,7 +461,7 @@ public class Main {
 		}
 		System.out.println("");
 	}
-	
+
 	private static String switchStaringPoint(Grammar peg, String ruleName, String startPoint) {
 		if(peg.hasRule(ruleName)) {
 			peg.show(ruleName);
@@ -422,74 +476,74 @@ public class Main {
 		return startPoint;
 	}
 
-	public final static void performShell2(Grammar peg) {
-		displayShellVersion(peg);
-		UList<ParsingRule> ruleList = peg.getRuleList();
-		UList<String> seq = new UList<String>(new String[16]);
-		int linenum = 1;
-		String line = null;
-		while ((line = readMultiLine("?>>> ", "    ")) != null) {
-			ParsingSource source = new StringSource(peg, "(stdin)", linenum, line);
-			ParsingContext context = new ParsingContext(source);
-			for(int i = 0; i < ruleList.size(); i++) {
-				ParsingRule rule = ruleList.ArrayValues[i];
-				if(rule.isObjectType()) {
-					context.resetSource(source, 0);
-					context.parse(peg, rule.ruleName);
-					if(context.isFailure()) {
-						continue;
-					}
-					seq.add(rule.ruleName);
-					infer(ruleList, context, seq, peg);
-					seq.pop();
-				}
-			}
-			linenum = linenum + 1;
-		}
-		System.out.println("");
-	}
-	
-	static void infer(UList<ParsingRule> ruleList, ParsingContext context, UList<String> seq, Grammar peg) {
-		if(!context.hasByteChar()) {
-			printSequence(seq);
-			return;
-		}
-		boolean foundRule = false;
-		long pos = context.getPosition();
-		for(int i = 0; i < ruleList.size(); i++) {
-			ParsingRule rule = ruleList.ArrayValues[i];
-			//if(rule.objectType) {
-				context.setPosition(pos);
-				context.parse(peg, rule.ruleName);
-				if(context.isFailure()) {
-					continue;
-				}
-				seq.add(rule.ruleName);
-				foundRule = true;
-				infer(ruleList, context, seq, peg);
-				seq.pop();
-			//}
-		}
-		if(!foundRule) {
-			context.setPosition(pos);
-			int ch = context.getByteChar();
-			seq.add("'" + (char)ch + "'");
-			context.consume(1);
-			infer(ruleList, context, seq, peg);
-			seq.pop();
-		}
-	}
+//	public final static void performShell2(Grammar peg) {
+//		displayShellVersion(peg);
+//		UList<ParsingRule> ruleList = peg.getRuleList();
+//		UList<String> seq = new UList<String>(new String[16]);
+//		int linenum = 1;
+//		String line = null;
+//		while ((line = readMultiLine("?>>> ", "    ")) != null) {
+//			ParsingSource source = new StringSource(peg, "(stdin)", linenum, line);
+//			ParsingContext context = new ParsingContext(source);
+//			for(int i = 0; i < ruleList.size(); i++) {
+//				ParsingRule rule = ruleList.ArrayValues[i];
+//				if(rule.isObjectType()) {
+//					context.resetSource(source, 0);
+//					context.parse(peg, rule.ruleName);
+//					if(context.isFailure()) {
+//						continue;
+//					}
+//					seq.add(rule.ruleName);
+//					infer(ruleList, context, seq, peg);
+//					seq.pop();
+//				}
+//			}
+//			linenum = linenum + 1;
+//		}
+//		System.out.println("");
+//	}
+//
+//	static void infer(UList<ParsingRule> ruleList, ParsingContext context, UList<String> seq, Grammar peg) {
+//		if(!context.hasByteChar()) {
+//			printSequence(seq);
+//			return;
+//		}
+//		boolean foundRule = false;
+//		long pos = context.getPosition();
+//		for(int i = 0; i < ruleList.size(); i++) {
+//			ParsingRule rule = ruleList.ArrayValues[i];
+//			//if(rule.objectType) {
+//				context.setPosition(pos);
+//				context.parse(peg, rule.ruleName);
+//				if(context.isFailure()) {
+//					continue;
+//				}
+//				seq.add(rule.ruleName);
+//				foundRule = true;
+//				infer(ruleList, context, seq, peg);
+//				seq.pop();
+//			//}
+//		}
+//		if(!foundRule) {
+//			context.setPosition(pos);
+//			int ch = context.getByteChar();
+//			seq.add("'" + (char)ch + "'");
+//			context.consume(1);
+//			infer(ruleList, context, seq, peg);
+//			seq.pop();
+//		}
+//	}
+//
+//	static void printSequence(UList<String> seq) {
+//		StringBuilder sb = new StringBuilder();
+//		sb.append("matched: ");
+//		for(int i = 0; i < seq.size(); i++) {
+//			sb.append(" ");
+//			sb.append(seq.ArrayValues[i]);
+//		}
+//		System.out.println(sb.toString());
+//	}
 
-	static void printSequence(UList<String> seq) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("matched: ");
-		for(int i = 0; i < seq.size(); i++) {
-			sb.append(" ");
-			sb.append(seq.ArrayValues[i]);
-		}
-		System.out.println(sb.toString());
-	}
-	
 	private static jline.ConsoleReader ConsoleReader = null;
 
 	private final static String readMultiLine(String prompt, String prompt2) {
@@ -562,49 +616,9 @@ public class Main {
 
 	// file
 
-	public final static ParsingSource loadSource(Grammar peg, String fileName) {
-		InputStream Stream = Main.class.getResourceAsStream("/" + fileName);
-		if (Stream == null) {
-			try {
-				File f = new File(fileName);
-				if(f.length() > 128 * 1024) {
-					return new FileSource(peg, fileName);
-				}
-				Stream = new FileInputStream(fileName);
-			} catch (IOException e) {
-				Main._Exit(1, "file error: " + fileName);
-				return null;
-			}
-		}
-		BufferedReader reader = new BufferedReader(new InputStreamReader(Stream));
-		try {
-			StringBuilder builder = new StringBuilder();
-			String line = reader.readLine();
-			while(line != null) {
-				builder.append(line);
-				builder.append("\n");
-				line = reader.readLine();
-			}
-			return new StringSource(peg, fileName, 1, builder.toString());
-		}
-		catch(IOException e) {
-			e.printStackTrace();
-			Main._Exit(1, "file error: " + fileName);
-		}
-		return null;
-	}
-
 	public final static String _GetPlatform() {
 		return "Java JVM-" + System.getProperty("java.version");
 	}
-
-//	public final static String _GetEnv(String Name) {
-//		return System.getenv(Name);
-//	}
-//
-//	public final static void _Print(Object msg) {
-//		System.err.print(msg);
-//	}
 
 	public final static void _PrintLine(Object message) {
 		System.err.println(message);
@@ -616,8 +630,6 @@ public class Main {
 		}
 	}
 
-	
-	
 	public final static void _Exit(int status, String message) {
 		if(Main.VerboseMode) {
 			System.out.println("EXIT " + Main._GetStackInfo(3) + " " + message);
@@ -656,8 +668,6 @@ public class Main {
 		}
 	}
 
-	
-	
 	public final static boolean _IsFlag(int flag, int flag2) {
 		return ((flag & flag2) == flag2);
 	}
@@ -671,7 +681,7 @@ public class Main {
 	}
 
 	public final static String _CharToString(int ch) {
-			return String.format("%c", ch);
+		return String.format("%c", ch);
 	}
 
 }

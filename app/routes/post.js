@@ -36,7 +36,7 @@ router.post('/run', function (req, res) {
                 return;
             }
             var dest_file = src_tempfile + '_rev.txt';
-            var exec_command = nez_command + ' -p ' + p4d_tempfile + ' ' + src_tempfile + ' > ' + dest_file;
+            var exec_command = nez_command + ' -p ' + p4d_tempfile + ' -i ' + src_tempfile + ' -t json > ' + dest_file;
             console.log(exec_command);
             createFileAndExec(src_tempfile, req.body.source, p4d_tempfile, req.body.p4d, exec_command, function (stdout) {
                 var data = fs.readFileSync(dest_file);
@@ -68,7 +68,7 @@ router.post('/visualize', function (req, res) {
                 return;
             }
             var dest_file = src_tempfile + '_rev.txt';
-            var exec_command = nez_command + ' -p ' + p4d_tempfile + ' -t json ' + src_tempfile + ' > ' + dest_file;
+            var exec_command = nez_command + ' -p ' + p4d_tempfile + ' -t json -i ' + src_tempfile + ' > ' + dest_file;
             console.log(exec_command);
             createFileAndExec(src_tempfile, req.body.source, p4d_tempfile, req.body.p4d, exec_command, function (stdout) {
                 var data = fs.readFileSync(dest_file);

@@ -1,6 +1,10 @@
 package org.peg4d;
 
-public class ParsingObject {
+import java.util.AbstractList;
+
+import org.peg4d.expression.ParsingExpression;
+
+public class ParsingObject extends AbstractList<ParsingObject> {
 	private ParsingSource    source = null;
 	private long             pospeg = 0;
 	private int              length = 0;
@@ -9,7 +13,8 @@ public class ParsingObject {
 	ParsingObject            parent = null;
 	private ParsingObject    AST[] = null;
 
-	ParsingObject(ParsingTag tag, ParsingSource source, long pospeg) {
+	
+	public ParsingObject(ParsingTag tag, ParsingSource source, long pospeg) {
 		this.tag        = tag;
 		this.source     = source;
 		this.pospeg     = pospeg;
@@ -17,12 +22,37 @@ public class ParsingObject {
 	}
 
 	ParsingObject(ParsingTag tag, ParsingSource source, long pos, ParsingExpression e) {
+//		this.oid = idCount++;
 		this.tag        = tag;
 		this.source     = source;
-		this.pospeg     = ParsingUtils.objectId(pos, e);
+		this.pospeg     = ParsingUtils.objectId(pos, (short)e.uniqueId);
 		assert(pos == ParsingUtils.getpos(this.pospeg));
 		this.length     = 0;
 	}
+
+	private ParsingObject() {
+	}
+
+	/*
+	 * duplicate object
+	 */
+	
+	public ParsingObject dup() {
+		ParsingObject n = new ParsingObject();
+		n.tag    = this.tag;
+		n.source = this.source;
+		n.pospeg = this.pospeg;
+		n.length = this.length;
+		n.value  = this.value;
+		if(this.AST != null) {
+			n.AST = new ParsingObject[this.size()];
+			for (int i=0; i < this.AST.length; i++) {
+				n.AST[i] = this.AST[i].dup();
+				n.AST[i].parent = this;
+			}
+		}
+		return n;
+	}	
 	
 //	@Override
 //	protected void finalize() {
@@ -40,8 +70,8 @@ public class ParsingObject {
 	public long getSourcePosition() {
 		return ParsingUtils.getpos(this.pospeg);
 	}
-
-	void setSourcePosition(long pos) {
+	
+	public void setSourcePosition(long pos) {
 		this.pospeg = ParsingUtils.objectId(pos, ParsingUtils.getpegid(this.pospeg));
 		assert(pos == ParsingUtils.getpos(this.pospeg));
 	}
@@ -54,15 +84,15 @@ public class ParsingObject {
 		return this.length;
 	}
 
-	void setLength(int length) {
+	public void setLength(int length) {
 		this.length = length;
 	}
 	
-	void setTag(ParsingTag tag) {
+	public void setTag(ParsingTag tag) {
 		this.tag = tag;
 	}
 
-	void setValue(Object value) {
+	public void setValue(Object value) {
 		this.value = value;
 	}
 	
@@ -83,54 +113,24 @@ public class ParsingObject {
 			return this.value.toString();
 		}
 		if(this.source != null) {
-			return this.source.substring(this.getSourcePosition(), this.getSourcePosition() + this.getLength());
+			this.value = this.source.substring(this.getSourcePosition(), this.getSourcePosition() + this.getLength());
+			return this.value.toString();
 		}
 		return "";
 	}
 
 	// AST[]
 	
-	public ParsingExpression getSourceExpression() {
-		short pegid = ParsingUtils.getpegid(pospeg);
-		if(pegid > 0 && source.peg != null) {
-			return source.peg.getDefinedExpression(pegid);
-		}
-		return null;
-	}
-
-	private final static ParsingObject[] LazyAST = new ParsingObject[0];
-
-	private void checkLazyAST() {
-//		if(this.AST == LazyAST) {
-//			PConstructor e = (PConstructor)this.getSourceExpression();
-//			this.AST = null;
-//			long pos = this.getSourcePosition();
-//			e.lazyMatch(this, new ParserContext(source.peg, source, pos, pos+this.getLength()), pos);
-//		}
-	}
-
-	boolean compactAST() {
-		if(this.AST != null) {
-			ParsingExpression e = this.getSourceExpression();
-			if(e instanceof ParsingConstructor && !((ParsingConstructor) e).leftJoin) {
-				this.AST = LazyAST;
-				return true;				
-			}
-		}
-		return this.AST == LazyAST;
-	}
-
-	
+	@Override
 	public final int size() {
-		checkLazyAST();
 		if(this.AST == null) {
 			return 0;
 		}
 		return this.AST.length;
 	}
 
+	@Override
 	public final ParsingObject get(int index) {
-		checkLazyAST();
 		return this.AST[index];
 	}
 
@@ -141,7 +141,9 @@ public class ParsingObject {
 		return defaultValue;
 	}
 
-	public final void set(int index, ParsingObject node) {
+	@Override
+	public final ParsingObject set(int index, ParsingObject node) {
+		ParsingObject oldValue = null;
 		if(index == -1) {
 			this.append(node);
 		}
@@ -149,14 +151,19 @@ public class ParsingObject {
 			if(!(index < this.size())){
 				this.expandAstToSize(index+1);
 			}
+			oldValue = this.AST[index];
 			this.AST[index] = node;
 			node.parent = this;
 		}
+		return oldValue;
 	}
 	
 	private void resizeAst(int size) {
 		if(this.AST == null && size > 0) {
 			this.AST = new ParsingObject[size];
+		}
+		else if(size == 0){
+			this.AST = null;
 		}
 		else if(this.AST.length != size) {
 			ParsingObject[] newast = new ParsingObject[size];
@@ -183,7 +190,6 @@ public class ParsingObject {
 		return defaultValue;
 	}
 
-	
 	public final void append(ParsingObject childNode) {
 		int size = this.size();
 		this.expandAstToSize(size+1);
@@ -210,6 +216,19 @@ public class ParsingObject {
 		}
 	}
 
+	// To implement List<T> interface
+	@Override
+	public final void add(int index, ParsingObject element) {
+		this.insert(index, element);
+	}
+
+	// To implement List<T> interface
+	@Override
+	public final boolean add(ParsingObject element) {
+		this.append(element);
+		return true;
+	}
+
 	public final void removeAt(int index) {
 		int oldsize = this.size();
 		if(oldsize > 1) {
@@ -226,7 +245,52 @@ public class ParsingObject {
 			this.AST = null;
 		}
 	}
-	
+
+	// To implement List<T> interface
+	@Override
+	public final ParsingObject remove(int index) {
+		ParsingObject removedObject = null;
+		if(index < this.size()){
+			removedObject = this.get(index);
+		}
+		this.removeAt(index);
+		return removedObject;
+	}
+
+	// To implement List<T> interface
+	@Override
+	protected final void removeRange(int fromIndex, int toIndex) {
+		if(fromIndex >= toIndex){
+			return;
+		}
+		final int oldSize = this.size();
+		if(fromIndex < 0){
+			fromIndex = 0;
+		}
+		if(toIndex > oldSize){
+			toIndex = oldSize;
+		}
+		if(fromIndex == 0 && toIndex == oldSize){
+			this.AST = null;
+			return;
+		}
+		final int newSize = oldSize - (toIndex - fromIndex);
+		ParsingObject[] newast = new ParsingObject[newSize];
+		if(fromIndex > 0) {
+			System.arraycopy(this.AST, 0, newast, 0, fromIndex);
+		}
+		if(oldSize - toIndex > 1) {
+			System.arraycopy(this.AST, toIndex, newast, fromIndex, oldSize - toIndex - 1);
+		}
+		this.AST = newast;
+	}
+
+	// To implement List<T> interface
+	@Override
+	public final void clear() {
+		this.AST = null;
+	}
+
 	public void replace(ParsingObject oldone, ParsingObject newone) {
 		for(int i = 0; i < this.size(); i++) {
 			if(this.AST[i] == oldone) {
@@ -235,7 +299,6 @@ public class ParsingObject {
 			}
 		}
 	}
-	
 
 	@Override
 	public String toString() {
@@ -247,12 +310,12 @@ public class ParsingObject {
 	final void stringfy(String indent, StringBuilder sb) {
 		sb.append("\n");
 		sb.append(indent);
-		sb.append("{#");
+		sb.append("(#");
 		sb.append(this.tag.toString());
 		if(this.AST == null) {
 			sb.append(" ");
-			ParsingCharset.formatQuoteString(sb, '\'', this.getText(), '\'');
-			sb.append("}");
+			Utils.formatQuoteString(sb, '\'', this.getText(), '\'');
+			sb.append(")");
 		}
 		else {
 			String nindent = "   " + indent;
@@ -268,7 +331,7 @@ public class ParsingObject {
 			}
 			sb.append("\n");
 			sb.append(indent);
-			sb.append("}");
+			sb.append(")");
 		}
 	}
 
@@ -282,67 +345,6 @@ public class ParsingObject {
 		}
 		return null;
 	}
-
-//	public final SymbolTable getSymbolTable() {
-//		PegObject node = this;
-//		while(node.gamma == null) {
-//			node = node.parent;
-//		}
-//		return node.gamma;
-//	}
-//
-//	public final SymbolTable getLocalSymbolTable() {
-//		if(this.gamma == null) {
-//			SymbolTable gamma = this.getSymbolTable();
-//			gamma = new SymbolTable(gamma.getNamespace(), this);
-//			// NOTE: this.gamma was set in SymbolTable constructor
-//			assert(this.gamma != null);
-//		}
-//		return this.gamma;
-//	}
-//	
-//	public final BunType getType(BunType defaultType) {
-//		if(this.typed == null) {
-//			if(this.matched != null) {
-//				this.typed = this.matched.getReturnType(defaultType);
-//			}
-//			if(this.typed == null) {
-//				return defaultType;
-//			}
-//		}
-//		return this.typed;
-//	}
-//	
-//	public boolean isVariable() {
-//		// TODO Auto-generated method stub
-//		return true;
-//	}
-//
-//	public void setVariable(boolean flag) {
-//	}
-
-//	public final int countUnmatched(int c) {
-//		for(int i = 0; i < this.size(); i++) {
-//			PegObject o = this.get(i);
-//			c = o.countUnmatched(c);
-//		}
-//		if(this.matched == null) {
-//			return c+1;
-//		}
-//		return c;
-//	}
-
-
-
-//
-//	public static Pego newPego(PegInput source, long pos, int length, int size) {
-//		Pego pego = new Pego("#new", source, pos);
-//		pego.length = length;
-//		if(size > 0) {
-//			pego.expandAstToSize(size);
-//		}
-//		return pego;
-//	}
 
 	public ParsingTag getTag() {
 		return this.tag;
@@ -370,5 +372,37 @@ public class ParsingObject {
 		}
 		return null;
 	}
+
+//	public final SymbolTable getSymbolTable() {
+//	PegObject node = this;
+//	while(node.gamma == null) {
+//		node = node.parent;
+//	}
+//	return node.gamma;
+//}
+//
+//public final SymbolTable getLocalSymbolTable() {
+//	if(this.gamma == null) {
+//		SymbolTable gamma = this.getSymbolTable();
+//		gamma = new SymbolTable(gamma.getNamespace(), this);
+//		// NOTE: this.gamma was set in SymbolTable constructor
+//		assert(this.gamma != null);
+//	}
+//	return this.gamma;
+//}
+//
+//public final BunType getType(BunType defaultType) {
+//	if(this.typed == null) {
+//		if(this.matched != null) {
+//			this.typed = this.matched.getReturnType(defaultType);
+//		}
+//		if(this.typed == null) {
+//			return defaultType;
+//		}
+//	}
+//	return this.typed;
+//}
+
+	
 }
 

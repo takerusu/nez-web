@@ -25,7 +25,7 @@ public final class UMap <T> {
 	}
 	protected String stringify(Object Value) {
 		if(Value instanceof String) {
-			return ParsingCharset.quoteString('"', (String) Value, '"');
+			return Utils.quoteString('"', (String) Value, '"');
 		}
 		return Value.toString();
 	}
@@ -52,6 +52,13 @@ public final class UMap <T> {
 		UList<String> a = new UList<String>(new String[this.m.size()]);
 		for(String k : this.m.keySet()) {
 			a.add(k);
+		}
+		return a;
+	}
+	public final UList<T> values(T[] aa) {
+		UList<T> a = new UList<T>(aa);
+		for(T v : this.m.values()) {
+			a.add(v);
 		}
 		return a;
 	}
