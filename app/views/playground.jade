@@ -1,12 +1,12 @@
 extends layout
 
 block header
-  +css('/css/index.css')
+  +css('./css/index.css')
   include editor_css
 
 block loadFiles
-  +js('/vendor/ace/src/ace.js')
-  +js('/js/top.js')
+  +js('./vendor/ace/src/ace.js')
+  +js('./js/top.js')
 
 block content
   include navbar

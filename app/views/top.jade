@@ -1,22 +1,22 @@
 extends layout
 
 block header
-  +css('/css/index.css')
-  +css('/css/app.css')
+  +css('./css/index.css')
+  +css('./css/app.css')
   include editor_css
 
 block loadFiles
-  +js('/vendor/ace/src/ace.js')
-  +js('/vendor/vmjs/lib/polymergestures.min.js')
-  +js('/vendor/vmjs/lib/pointerevents.min.js')
-  +js('/vendor/vmjs/src/vismodeljs/Utils.js')
-  +js('/vendor/vmjs/src/vismodeljs/Viewport.js')
-  +js('/vendor/vmjs/src/vismodeljs/LayoutEngine.js')
-  +js('/vendor/vmjs/src/vismodeljs/NodeView.js')
-  +js('/vendor/vmjs/src/vismodeljs/VisualModelPanel.js')
-  +js('/vendor/vmjs/src/vismodeljs/Shape.js')
-  +js('/vendor/vmjs/app.js')
-  +js('/js/top.js')
+  +js('./vendor/ace/src/ace.js')
+  +js('./vendor/vmjs/lib/polymergestures.min.js')
+  +js('./vendor/vmjs/lib/pointerevents.min.js')
+  +js('./vendor/vmjs/src/vismodeljs/Utils.js')
+  +js('./vendor/vmjs/src/vismodeljs/Viewport.js')
+  +js('./vendor/vmjs/src/vismodeljs/LayoutEngine.js')
+  +js('./vendor/vmjs/src/vismodeljs/NodeView.js')
+  +js('./vendor/vmjs/src/vismodeljs/VisualModelPanel.js')
+  +js('./vendor/vmjs/src/vismodeljs/Shape.js')
+  +js('./vendor/vmjs/app.js')
+  +js('./js/top.js')
 
 block content
   .container(style="top: -91px; height: 100%")
