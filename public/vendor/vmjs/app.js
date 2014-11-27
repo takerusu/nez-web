@@ -168,20 +168,5 @@ window.onload = function () {
     //}
     VisModelJS.ShapeFactory.SetFactory(new PegShapeFactory());
 
-    panel.InitializeView(TopNode);
-    panel.Draw();
-    panel.Viewport.camera.setPositionAndScale(TopNode.centerGx, TopNode.centerGy + panel.Viewport.areaHeight / 3, 1);
-    panel.addEventListener("dblclick", function (event) {
-        var node = event.node;
-        node.folded = !node.folded;
-        if (UA.isTrident()) {
-            for (var k in panel.ViewMap) {
-                panel.ViewMap[k].shape.Content = null;
-            }
-            panel.Draw(panel.TopNodeView.label, 0, node);
-        } else {
-            panel.Draw(panel.TopNodeView.label, 300, node);
-        }
-    });
 };
 //# sourceMappingURL=app.js.map

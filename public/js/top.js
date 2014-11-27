@@ -148,6 +148,7 @@ function visualizeCallback(e) {
         if (res.runnable) {
             $("#visualOutput").css("display", "");
             $("#visualOutput").empty();
+            var UA = VisModelJS.Utils.UserAgant;
             var root = document.getElementById("visualOutput");
             var panel = new VisModelJS.VisualModelPanel(root);
             var TopNode = createNodeViewFromP4DJson(JSON.parse(res.source));
@@ -155,9 +156,17 @@ function visualizeCallback(e) {
             panel.Draw();
             panel.Viewport.camera.setPositionAndScale(TopNode.centerGx, TopNode.centerGy + panel.Viewport.areaHeight / 3, 1);
             panel.addEventListener("dblclick", function (event) {
-                var node = event.node;
-                node.SetIsFolded(!node.IsFolded());
-                panel.Draw(panel.TopNodeView.Label, 300, node);
+                var node = (event).node;
+                node.folded = !node.folded;
+                if (UA.isTrident()) {
+                    for (var k in panel.ViewMap) {
+                        panel.ViewMap[k].shape.Content = null;
+                    }
+                    panel.Draw(panel.TopNodeView.label, 0, node);
+                }
+                else {
+                    panel.Draw(panel.TopNodeView.label, 300, node);
+                }
             });
         }
     }, function () {
