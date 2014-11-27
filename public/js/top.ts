@@ -172,7 +172,7 @@ function visualizeCallback(e: Event){
 
       panel.InitializeView(TopNode);
       panel.Draw();
-      panel.Viewport.SetCamera(TopNode.GetCenterGX(), TopNode.GetCenterGY() + panel.Viewport.GetPageHeight() / 3, 1);
+      panel.Viewport.camera.setPositionAndScale(TopNode.centerGx, TopNode.centerGy + panel.Viewport.areaHeight / 3, 1);
       panel.addEventListener("dblclick", function (event) {
           var node = event.node;
           node.SetIsFolded(!node.IsFolded());
