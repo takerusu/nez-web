@@ -142,7 +142,7 @@ function runCallback(e: Event){
 function visualize(source, p4d, callback, onerror){
   $.ajax({
     type: "POST",
-    url: Config.basePath + "/visualize",
+    url: Config.basePath + "./visualize",
     data: JSON.stringify({source: source, p4d: p4d}),
     dataType: 'json',
     contentType: "application/json; charset=utf-8",
@@ -228,7 +228,7 @@ function inputToggle(toId, target, notTarget, id, notFocusId){
 function setP4d(fileName, displayName){
   $.ajax({
     type: "GET",
-    url: "/p4d/" + fileName + ".p4d",
+    url: "./p4d/" + fileName + ".p4d",
     success: function(res){
       if (pegEditor != null) {
           pegEditor.setValue(res);
