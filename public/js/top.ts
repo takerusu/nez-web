@@ -108,13 +108,20 @@ $(function() {
 
       setSource();
 
-      pegEditor.on("change", visualizeCallback);
-      inputEditor.on("change", visualizeCallback);
+      pegEditor.on("change", changeEditor);
+      inputEditor.on("change", changeEditor);
 });
 
 $(window).load(function(){
   resizeTextarea();
 });
+
+var timer;
+
+function changeEditor(e){
+  clearTimeout(timer);
+  timer = setTimeout(visualizeCallback, 500);
+}
 
 function runNez(source, p4d, callback, onerror){
   $.ajax({
