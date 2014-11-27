@@ -123,6 +123,19 @@ function changeEditor(e){
   timer = setTimeout(visualizeCallback, 500);
 }
 
+function changeMode(mode?: string){
+  var modePath = "";
+  if(mode){
+    switch(mode){
+      case "vim":
+        modePath = "ace/keyboard/vim";
+        break;
+    }
+  }
+  pegEditor.setKeyboardHandler(modePath);
+  inputEditor.setKeyboardHandler(modePath);
+}
+
 function runNez(source, p4d, callback, onerror){
   $.ajax({
     type: "POST",
