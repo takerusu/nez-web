@@ -166,11 +166,6 @@ window.onload = function(){
 
     VisModelJS.ShapeFactory.SetFactory(new PegShapeFactory());
 
-    var root = <HTMLDivElement>document.getElementById("visualOutput");
-    var panel = new VisModelJS.VisualModelPanel(root);
-
-    var TopNode = createNodeViewFromP4DJson(<P4DNode>sampleData);
-
     panel.InitializeView(TopNode);
     panel.Draw();
     panel.Viewport.camera.setPositionAndScale(TopNode.centerGx, TopNode.centerGy + panel.Viewport.areaHeight / 3, 1);
