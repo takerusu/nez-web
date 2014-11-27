@@ -134,8 +134,10 @@ var createNodeViewFromP4DJson = function () {
                 (<P4DNode[]>json.value).forEach(json => {
                     node.appendChild(createNodeViewFromP4DJson(json));
                 });
-            } else {
+            } else if((<any>json.value.constructor).name == "String") {
                 node.content = json.value.toString();
+            } else {
+                node.appendChild(createNodeViewFromP4DJson(json.value));
             }
         }
         return node;
