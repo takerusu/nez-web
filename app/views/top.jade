@@ -20,7 +20,7 @@ block loadFiles
 
 block content
   .container(style="top: -91px; height: 100%")
-    .row(id="topbar")
+    //.row(id="topbar")
       .title NEZ
       p.title-border.title-border-left
       p.title-border.title-border-right
@@ -67,6 +67,10 @@ block content
                     a(role="menuitem", tabindex="-1", value="JavaScript") JavaScript
                   li(role="presentation")
                     a(role="menuitem", tabindex="-1", value="json") JSON
+                  li(role="presentation")
+                    a(role="menuitem", tabindex="-1", value="xml") XML
+                  li(role="presentation")
+                    a(role="menuitem", tabindex="-1", value="syslog") Syslog
           pre#pegEditor(name="example", style="height: 88%")
       .input-area
         .collapse-block(id="input")
